@@ -96,7 +96,7 @@ List organizations, projects, versions, and contents:
 
 ```bash
 ellygent orgs
-ellygent projects --org john-deere
+ellygent projects --org john-doe
 ellygent versions --project tractor_control
 ellygent contents --project tractor_control --version main
 ```
@@ -157,7 +157,7 @@ ellygent sync \
 ```
 
 **Identifiers:**
-- Organizations use organization slugs (e.g., `john-deere`)
+- Organizations use organization slugs (e.g., `john-doe`)
 - Projects use ReqIF `alternative_id`
 - Versions use `main` or slugified baseline names
 - Specifications use `alternative_id`
@@ -172,7 +172,7 @@ ellygent config
 
 # Set configuration values
 ellygent config set api-url https://api.example.com
-ellygent config set default-org john-deere
+ellygent config set default-org john-doe
 ellygent config set default-project tractor_control
 ```
 
