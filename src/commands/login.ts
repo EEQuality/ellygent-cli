@@ -1,8 +1,8 @@
 import type { Command } from "commander";
 import { AuthService } from "../services/authService.js";
-import { printSuccess } from "../utils/terminal.js";
 import type { CommandContext } from "./shared.js";
-import { withErrorHandling } from "./shared.js";
+import { getFormatter, withErrorHandling } from "./shared.js";
+import { outputSuccess } from "../utils/formatter.js";
 
 interface LoginCommandOptions {
   apiUrl?: string;
@@ -18,7 +18,8 @@ export function registerLoginCommand(program: Command, context: CommandContext):
     .option("--email <email>", "Ellygent user email (for email/password auth)")
     .option("--pat <token>", "Personal Access Token (alternative to email/password)")
     .action(
-      withErrorHandling(async (options: LoginCommandOptions) => {
+      withErrorHandling(async (options: LoginCommandOptions, command) => {
+        const formatter = getFormatter(command);
         const result = await new AuthService(context.configStore).login({
           apiUrl: options.apiUrl,
           email: options.email,
@@ -27,9 +28,9 @@ export function registerLoginCommand(program: Command, context: CommandContext):
         });
         
         if (result.email) {
-          printSuccess(`Logged in as ${result.email} (${result.apiUrl})`);
+          outputSuccess(`Logged in as ${result.email} (${result.apiUrl})`, formatter);
         } else {
-          printSuccess(`Logged in with Personal Access Token (${result.apiUrl})`);
+          outputSuccess(`Logged in with Personal Access Token (${result.apiUrl})`, formatter);
         }
       })
     );

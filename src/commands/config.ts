@@ -1,9 +1,10 @@
 import { input } from "@inquirer/prompts";
 import type { Command } from "commander";
 import type { ConfigKey } from "../types/config.js";
-import { printSuccess, quietToken, renderTable } from "../utils/terminal.js";
+import { quietToken } from "../utils/terminal.js";
 import type { CommandContext } from "./shared.js";
-import { withErrorHandling } from "./shared.js";
+import { getFormatter, withErrorHandling } from "./shared.js";
+import { outputTable, outputSuccess } from "../utils/formatter.js";
 
 const CONFIG_KEY_MAP: Record<string, ConfigKey> = {
   "api-url": "apiUrl",
@@ -17,9 +18,10 @@ export function registerConfigCommand(program: Command, context: CommandContext)
   const config = program.command("config").description("Show or update local Ellygent CLI configuration");
 
   config.action(
-    withErrorHandling(async () => {
+    withErrorHandling(async (options, command) => {
+      const formatter = getFormatter(command);
       const current = await context.configStore.load();
-      renderTable(
+      outputTable(
         [
           { key: "api-url", value: current.apiUrl || "" },
           { key: "default-org", value: current.defaultOrg || "" },
@@ -28,7 +30,8 @@ export function registerConfigCommand(program: Command, context: CommandContext)
           { key: "refresh-token", value: quietToken(current.refreshToken) },
           { key: "config-path", value: context.configStore.path }
         ],
-        ["key", "value"]
+        ["key", "value"],
+        formatter
       );
     })
   );
@@ -39,7 +42,8 @@ export function registerConfigCommand(program: Command, context: CommandContext)
     .argument("<key>", "api-url, default-org, default-project, access-token, refresh-token")
     .argument("[value]", "Value to store")
     .action(
-      withErrorHandling(async (rawKey: string, rawValue?: string) => {
+      withErrorHandling(async (rawKey: string, rawValue?: string, command?) => {
+        const formatter = getFormatter(command);
         const key = CONFIG_KEY_MAP[rawKey];
         if (!key) {
           throw new Error(`Unsupported config key '${rawKey}'.`);
@@ -52,7 +56,7 @@ export function registerConfigCommand(program: Command, context: CommandContext)
           }));
 
         await context.configStore.set(key, value);
-        printSuccess(`Updated ${rawKey}`);
+        outputSuccess(`Updated ${rawKey}`, formatter);
       })
     );
 }

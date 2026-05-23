@@ -3,6 +3,8 @@ import { ConfigStore } from "../config/configStore.js";
 import { ClientFactory } from "../services/clientFactory.js";
 import { printError } from "../utils/terminal.js";
 import { userMessageForApiError } from "../api/errors.js";
+import { createFormatter, type FormatterContext, type OutputFormat } from "../utils/formatter.js";
+import type { Command } from "commander";
 
 export interface CommandContext {
   configStore: ConfigStore;
@@ -15,6 +17,12 @@ export function createCommandContext(): CommandContext {
     configStore,
     clientFactory: new ClientFactory(configStore)
   };
+}
+
+export function getFormatter(command: Command): FormatterContext {
+  const opts = command.optsWithGlobals() as { format?: string };
+  const format = (opts.format || "json") as OutputFormat;
+  return createFormatter(format);
 }
 
 export function withErrorHandling<T extends unknown[]>(

@@ -7,12 +7,14 @@ import { createCommandContext } from "./commands/shared.js";
 import { registerSyncCommand } from "./commands/sync.js";
 
 const program = new Command();
-const context = createCommandContext();
 
 program
   .name("ellygent")
   .description("Ellygent CLI for engineering context discovery and sync")
-  .version("0.1.0");
+  .version("0.1.0")
+  .option("-f, --format <type>", "Output format: json (default) or markdown/md", "json");
+
+const context = createCommandContext();
 
 registerLoginCommand(program, context);
 registerDiscoveryCommands(program, context);

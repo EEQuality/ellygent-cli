@@ -1,8 +1,8 @@
 import type { Command } from "commander";
 import { SyncService } from "../services/syncService.js";
-import { printInfo, printSuccess } from "../utils/terminal.js";
 import type { CommandContext } from "./shared.js";
-import { requireOption, spin, withErrorHandling } from "./shared.js";
+import { getFormatter, requireOption, spin, withErrorHandling } from "./shared.js";
+import { outputSuccess, outputInfo } from "../utils/formatter.js";
 
 interface SyncCommandOptions {
   project?: string;
@@ -32,7 +32,8 @@ export function registerSyncCommand(program: Command, context: CommandContext): 
     .option("--include-ai-summaries", "Include AI summary files")
     .option("--workspace <path>", "Workspace directory", process.cwd())
     .action(
-      withErrorHandling(async (options: SyncCommandOptions) => {
+      withErrorHandling(async (options: SyncCommandOptions, command) => {
+        const formatter = getFormatter(command);
         const config = await context.configStore.load();
         const project = requireOption(
           options.project || config.defaultProject,
@@ -57,9 +58,9 @@ export function registerSyncCommand(program: Command, context: CommandContext): 
           })
         );
 
-        printSuccess(`Context synced to ${result.targetDir}`);
-        printInfo(`${result.manifest.project.name} (${result.manifest.project.identifier})`);
-        printInfo(`Version ${result.manifest.version.identifier} - generated ${result.manifest.generated_at}`);
+        outputSuccess(`Context synced to ${result.targetDir}`, formatter);
+        outputInfo(`${result.manifest.project.name} (${result.manifest.project.identifier})`, formatter);
+        outputInfo(`Version ${result.manifest.version.identifier} - generated ${result.manifest.generated_at}`, formatter);
       })
     );
 }

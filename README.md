@@ -101,61 +101,54 @@ ellygent versions --project tractor_control
 ellygent contents --project tractor_control --version main
 ```
 
+### Output Format
+
+By default, all commands output JSON. Use `--format` or `-f` to change output format:
+
+```bash
+# JSON output (default)
+ellygent orgs
+
+# Markdown table output
+ellygent orgs --format markdown
+ellygent projects --org my-org -f md
+
+# All commands support both formats
+ellygent versions --project tractor_control --format md
+ellygent contents --project tractor_control --version main -f json
+```
+
+**Supported formats:**
+- `json` (default) — machine-readable JSON output
+- `markdown` or `md` — human-readable markdown tables
+
 ## Sync Context to Local Workspace
 
 Download an AI-optimized context package:
 
 ```bash
-ellygent sync --project tractor_control --version main --output ./context/
-```
-
-This creates a `.ellygent/` directory with markdown requirements, JSON metadata, and traceability data.
-
-## Example: PAT-based Workflow
-
-```bash
-# One-time setup: create .env file
-cp .env.example .env
-# Edit .env and add your PAT
-
-# Login once (PAT is stored securely)
-ellygent login --api-url https://api.ellygent.com
-
-# Use CLI without re-authenticating
-ellygent orgs
-ellygent projects --org my-org
-ellygent sync --project my-project --version v1.0.0 --output ./context/
-```
-
-Once logged in with a PAT, the CLI will use it for all subsequent commands until you logout or the token is revoked.
-
-Identifiers are public Ellygent identifiers:
-
-- organizations use organization slugs
-- projects use ReqIF `alternative_id`
-- versions use `main` or slugified baseline names
-- specifications use `alternative_id`
-
-## Sync Context
-
-```bash
 ellygent sync --project tractor_control --version main
 ```
 
-This downloads a ZIP package from the Context API and safely extracts it into:
+This downloads a ZIP package from the Context API and safely extracts it into `./.ellygent/` with markdown requirements, JSON metadata, and traceability data.
 
-```text
-./.ellygent/
-```
-
-Selective export:
+### Sync Options
 
 ```bash
+# Sync to custom workspace directory
+ellygent sync --project tractor_control --version main --workspace ./context/
+
+# Selective export: specific specifications only
 ellygent sync \
   --project tractor_control \
   --version main \
   --spec functional_requirements \
-  --spec safety_requirements \
+  --spec safety_requirements
+
+# Include optional context
+ellygent sync \
+  --project tractor_control \
+  --version main \
   --include-traceability \
   --include-architecture \
   --include-constraints \
@@ -163,23 +156,73 @@ ellygent sync \
   --include-ai-summaries
 ```
 
-Use `--workspace <path>` to sync into a specific workspace directory.
+**Identifiers:**
+- Organizations use organization slugs (e.g., `john-deere`)
+- Projects use ReqIF `alternative_id`
+- Versions use `main` or slugified baseline names
+- Specifications use `alternative_id`
 
 ## Config
 
+View or update stored configuration:
+
 ```bash
+# Show current config
 ellygent config
+
+# Set configuration values
 ellygent config set api-url https://api.example.com
 ellygent config set default-org john-deere
 ellygent config set default-project tractor_control
 ```
 
-CI systems can provide a token without an interactive login:
+**Config keys:**
+- `api-url` — Ellygent API base URL
+- `default-org` — Default organization for commands
+- `default-project` — Default project for commands
+- `access-token` — Manually set access token (advanced)
+- `refresh-token` — Manually set refresh token (advanced)
+
+## Example Workflows
+
+### PAT-based Development Workflow
 
 ```bash
-ellygent config set api-url https://api.example.com
-ellygent config set access-token "$ELLYGENT_ACCESS_TOKEN"
-ellygent sync --project tractor_control --version main
+# One-time setup: create .env file
+echo "ELLYGENT_PAT=elly_pat_xxxxxxxxxxxxxxxxxxxxx" > .env
+echo "ELLYGENT_API_URL=https://api.ellygent.com" >> .env
+
+# Login once (PAT is stored securely)
+ellygent login --api-url https://api.ellygent.com
+
+# Set defaults to avoid repeating options
+ellygent config set default-org my-org
+ellygent config set default-project my-project
+
+# Use CLI without re-authenticating
+ellygent orgs -f md
+ellygent projects
+ellygent versions
+ellygent sync --version v1.0.0
+```
+
+### CI/CD Pipeline Integration
+
+```bash
+# Authenticate with PAT from environment
+export ELLYGENT_PAT="${SECRET_ELLYGENT_PAT}"
+ellygent login --api-url https://api.ellygent.com
+
+# Download context for validation or analysis
+ellygent sync \
+  --project safety_critical_system \
+  --version baseline-1.2.0 \
+  --workspace ./engineering-context/ \
+  --include-traceability \
+  --format json
+
+# Parse JSON output programmatically
+ellygent projects --org automotive --format json | jq '.[] | .identifier'
 ```
 
 ## Development
@@ -188,21 +231,17 @@ ellygent sync --project tractor_control --version main
 npm install
 npm run typecheck
 npm run build
+npm link  # for local testing
 ```
 
-Source layout:
+**Source layout:**
 
 ```text
 src/
   api/        API clients and endpoint definitions
   commands/   Commander command handlers
-  config/     persistent config store
-  services/   auth, sync, ZIP extraction
-  types/      shared TypeScript contracts
-  utils/      terminal/workspace helpers
+  config/     Persistent config store
+  services/   Auth, sync, ZIP extraction
+  types/      Shared TypeScript contracts
+  utils/      Terminal/workspace helpers
 ```
-
-
-
-#CLI TEST
-elly_pat_4UFMVuNlfQK-prfQzEjvmdVsbp9eJCmG32pxbrMcF6I

@@ -1,8 +1,9 @@
 import type { Command } from "commander";
 import { renderContentsTree } from "../utils/tree.js";
-import { printSuccess, renderTable } from "../utils/terminal.js";
+import { printSuccess } from "../utils/terminal.js";
 import type { CommandContext } from "./shared.js";
-import { requireOption, spin, withErrorHandling } from "./shared.js";
+import { getFormatter, requireOption, spin, withErrorHandling } from "./shared.js";
+import { outputTable, outputTree, outputSuccess } from "../utils/formatter.js";
 
 interface ProjectsOptions {
   org?: string;
@@ -21,10 +22,11 @@ export function registerDiscoveryCommands(program: Command, context: CommandCont
     .command("orgs")
     .description("List Ellygent organizations accessible to the authenticated user")
     .action(
-      withErrorHandling(async () => {
+      withErrorHandling(async (options, command) => {
+        const formatter = getFormatter(command);
         const client = await context.clientFactory.contextClient();
         const orgs = await spin("Loading organizations", () => client.listOrganizations());
-        renderTable(orgs, ["identifier", "name"]);
+        outputTable(orgs, ["identifier", "name"], formatter);
       })
     );
 
@@ -33,12 +35,13 @@ export function registerDiscoveryCommands(program: Command, context: CommandCont
     .description("List projects in an Ellygent organization")
     .option("--org <identifier>", "Organization identifier (slug)")
     .action(
-      withErrorHandling(async (options: ProjectsOptions) => {
+      withErrorHandling(async (options: ProjectsOptions, command) => {
+        const formatter = getFormatter(command);
         const config = await context.configStore.load();
         const org = requireOption(options.org || config.defaultOrg, "--org", "`ellygent config set default-org <identifier>`");
         const client = await context.clientFactory.contextClient();
         const projects = await spin("Loading projects", () => client.listProjects(org));
-        renderTable(projects, ["identifier", "name", "description"]);
+        outputTable(projects, ["identifier", "name", "description"], formatter);
       })
     );
 
@@ -47,7 +50,8 @@ export function registerDiscoveryCommands(program: Command, context: CommandCont
     .description("List live and baseline versions for a project")
     .option("--project <identifier>", "Project identifier (alternative_id)")
     .action(
-      withErrorHandling(async (options: ProjectOptions) => {
+      withErrorHandling(async (options: ProjectOptions, command) => {
+        const formatter = getFormatter(command);
         const config = await context.configStore.load();
         const project = requireOption(
           options.project || config.defaultProject,
@@ -56,7 +60,7 @@ export function registerDiscoveryCommands(program: Command, context: CommandCont
         );
         const client = await context.clientFactory.contextClient();
         const versions = await spin("Loading versions", () => client.listVersions(project));
-        renderTable(versions, ["identifier", "name", "description", "type"]);
+        outputTable(versions, ["identifier", "name", "description", "type"], formatter);
       })
     );
 
@@ -66,7 +70,8 @@ export function registerDiscoveryCommands(program: Command, context: CommandCont
     .option("--project <identifier>", "Project identifier (alternative_id)")
     .option("--version <identifier>", "Version identifier", "main")
     .action(
-      withErrorHandling(async (options: ContentsOptions) => {
+      withErrorHandling(async (options: ContentsOptions, command) => {
+        const formatter = getFormatter(command);
         const config = await context.configStore.load();
         const project = requireOption(
           options.project || config.defaultProject,
@@ -76,8 +81,13 @@ export function registerDiscoveryCommands(program: Command, context: CommandCont
         const version = options.version || "main";
         const client = await context.clientFactory.contextClient();
         const contents = await spin("Loading context contents", () => client.getContents(project, version));
-        printSuccess(`Context contents for ${project}@${version}`);
-        renderContentsTree(contents);
+        
+        if (formatter.format === "json") {
+          outputTree(contents, formatter);
+        } else {
+          outputSuccess(`Context contents for ${project}@${version}`, formatter);
+          renderContentsTree(contents);
+        }
       })
     );
 }
