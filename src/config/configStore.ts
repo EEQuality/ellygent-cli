@@ -16,6 +16,14 @@ export class ConfigStore {
   }
 
   async load(): Promise<EllygentConfig> {
+    const fileConfig = await this.loadFromFile();
+    const envConfig = loadFromEnv();
+    
+    // Merge: file config < env vars (env vars override file)
+    return { ...fileConfig, ...envConfig };
+  }
+
+  private async loadFromFile(): Promise<EllygentConfig> {
     try {
       const raw = await readFile(this.configPath, "utf8");
       const parsed = JSON.parse(raw) as EllygentConfig;
@@ -61,6 +69,47 @@ export class ConfigError extends Error {
     super(message);
     this.name = "ConfigError";
   }
+}
+
+/**
+ * Load configuration from environment variables.
+ * Environment variables take precedence over file config.
+ * 
+ * Supported variables:
+ * - ELLYGENT_API_URL
+ * - ELLYGENT_TOKEN (sets accessToken)
+ * - ELLYGENT_ORG (sets defaultOrg)
+ * - ELLYGENT_PROJECT (sets defaultProject)
+ */
+export function loadFromEnv(): Partial<EllygentConfig> {
+  const config: Partial<EllygentConfig> = {};
+
+  const apiUrl = process.env.ELLYGENT_API_URL?.trim();
+  if (apiUrl) {
+    try {
+      config.apiUrl = normalizeApiUrl(apiUrl);
+    } catch (error) {
+      // Invalid API URL in env var - ignore it
+      console.warn(`Warning: Invalid ELLYGENT_API_URL in environment: ${apiUrl}`);
+    }
+  }
+
+  const token = process.env.ELLYGENT_TOKEN?.trim();
+  if (token) {
+    config.accessToken = token;
+  }
+
+  const org = process.env.ELLYGENT_ORG?.trim();
+  if (org) {
+    config.defaultOrg = org;
+  }
+
+  const project = process.env.ELLYGENT_PROJECT?.trim();
+  if (project) {
+    config.defaultProject = project;
+  }
+
+  return config;
 }
 
 export function defaultConfigPath(): string {

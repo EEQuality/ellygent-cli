@@ -183,6 +183,53 @@ ellygent config set default-project tractor_control
 - `access-token` — Manually set access token (advanced)
 - `refresh-token` — Manually set refresh token (advanced)
 
+## Environment Variables
+
+Environment variables can override file-based configuration. This is useful for CI/CD pipelines, containerized environments, and temporary overrides.
+
+**Supported variables:**
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `ELLYGENT_API_URL` | API base URL | `https://api.ellygent.com` |
+| `ELLYGENT_TOKEN` | Access token (PAT or JWT) | `elly_pat_xxxxx` |
+| `ELLYGENT_ORG` | Default organization | `my-org` |
+| `ELLYGENT_PROJECT` | Default project | `my-project` |
+| `ELLYGENT_PAT` | Personal Access Token for login | `elly_pat_xxxxx` |
+| `ELLYGENT_PASSWORD` | Password for email/password login | `********` |
+
+**Priority order** (highest to lowest):
+1. Command-line flags (`--org`, `--project`, etc.)
+2. Environment variables (`ELLYGENT_*`)
+3. Config file (`~/.ellygent/config.json`)
+4. Built-in defaults
+
+**Example usage:**
+
+```bash
+# Temporary override for one command
+ELLYGENT_ORG=test-org ellygent projects
+
+# Session-wide override
+export ELLYGENT_API_URL=https://staging.ellygent.com
+ellygent orgs
+ellygent projects --org my-org
+
+# CI/CD environment
+export ELLYGENT_TOKEN="${SECRET_TOKEN}"
+export ELLYGENT_ORG=prod-org
+ellygent sync --project critical-system --version v2.0.0
+
+# Check which values come from env vs file
+ellygent config list
+```
+
+**Security notes:**
+- Never commit environment variables to version control
+- Use `.env` files locally and add them to `.gitignore`
+- In CI/CD, use secret management (GitHub Secrets, GitLab CI/CD variables, etc.)
+- Environment variables are visible to all processes — use carefully in shared environments
+
 ## Example Workflows
 
 ### PAT-based Development Workflow
@@ -224,6 +271,99 @@ ellygent sync \
 # Parse JSON output programmatically
 ellygent projects --org automotive --format json | jq '.[] | .identifier'
 ```
+
+## Shell Completion
+
+Enable tab completion for faster command entry and discovery.
+
+### Automatic Installation
+
+The CLI auto-detects your shell and installs completion:
+
+```bash
+ellygent completion install
+```
+
+### Manual Installation
+
+Install for a specific shell:
+
+```bash
+# Bash
+ellygent completion install bash
+
+# Zsh
+ellygent completion install zsh
+
+# Fish
+ellygent completion install fish
+
+# PowerShell
+ellygent completion install powershell
+```
+
+### Generate Scripts Only
+
+Generate completion scripts without installing:
+
+```bash
+# Print to stdout
+ellygent completion generate bash
+ellygent completion generate zsh
+ellygent completion generate fish
+ellygent completion generate powershell
+
+# Save to file
+ellygent completion generate bash > ellygent-completion.bash
+```
+
+### What Gets Completed
+
+Tab completion supports:
+
+- **Commands**: `auth`, `context`, `config`, `completion`
+- **Subcommands**: `auth login`, `context pull`, `config set`, etc.
+- **Global flags**: `--format`, `--json`, `--quiet`, `--verbose`, `--debug`, `--help`
+- **Format values**: `json`, `markdown`, `md`
+
+**Example usage:**
+
+```bash
+# Type and press TAB
+ellygent auth <TAB>
+# → login  logout  status
+
+ellygent context <TAB>
+# → orgs  projects  versions  inspect  pull
+
+ellygent --format <TAB>
+# → json  markdown  md
+```
+
+### Shell-Specific Notes
+
+**Bash**  
+Completion added to `~/.ellygent_completion.bash`. Source it in `~/.bashrc`:
+```bash
+source ~/.ellygent_completion.bash
+```
+
+**Zsh**  
+Completion added to `~/.ellygent_completion.zsh`. Source it in `~/.zshrc`:
+```zsh
+source ~/.ellygent_completion.zsh
+```
+
+**Fish**  
+Completion installed to `~/.config/fish/completions/ellygent.fish`. Auto-loaded.
+
+**PowerShell**  
+Completion saved to `~/ellygent_completion.ps1`. Source it in your profile:
+```powershell
+. ~/ellygent_completion.ps1
+```
+
+Find your PowerShell profile path with `$PROFILE`, then add the source line.
 
 ## Development
 
