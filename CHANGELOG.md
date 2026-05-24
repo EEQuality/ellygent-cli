@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Standalone binary distribution** for Windows, Linux, and macOS (Intel + Apple Silicon)
+- Cross-platform build pipeline using `@yao-pkg/pkg`
+- Automated archive generation (.zip for Windows, .tar.gz for Unix-like systems)
+- SHA256 checksum generation for all release artifacts
+- Version metadata generation for frontend consumption
+- Installer scripts for quick installation:
+  - `install.sh` for Linux/macOS (curl/wget support)
+  - `install.ps1` for Windows (PowerShell)
+- Automated frontend publishing workflow
+- GitHub Actions release pipeline
+- Platform-specific download UI in frontend with auto-detection
+- Checksum verification in installer scripts
+- Direct download support from ellygent.com/cli
 - Shell completion support for Bash, Zsh, Fish, and PowerShell
 - `completion generate <shell>` command to generate completion scripts
 - `completion install [shell]` command with auto-detection

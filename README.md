@@ -4,13 +4,42 @@ Developer CLI for authenticating with Ellygent and downloading AI-optimized engi
 
 ## Install
 
+### Quick Install (Recommended)
+
+**Linux/macOS:**
+```bash
+curl -fsSL https://ellygent.com/cli/install.sh | sh
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://ellygent.com/cli/install.ps1 | iex
+```
+
+### Download Standalone Binary
+
+Download pre-built binaries from [ellygent.com/cli](https://ellygent.com/cli) or [GitHub Releases](https://github.com/EEQuality/ellygent-cli/releases):
+
+- **Windows (x64)**: `ellygent-win-x64.exe`
+- **Linux (x64)**: `ellygent-linux-x64`
+- **macOS Intel (x64)**: `ellygent-macos-x64`
+- **macOS Apple Silicon (ARM64)**: `ellygent-macos-arm64`
+
+Extract and move the binary to a directory in your PATH.
+
+### Install via npm
+
 ```bash
 npm install -g @ellygent/cli
 ```
 
+### Build from Source
+
 For local development:
 
 ```bash
+git clone https://github.com/EEQuality/ellygent-cli.git
+cd ellygent-cli
 npm install
 npm run build
 npm link
