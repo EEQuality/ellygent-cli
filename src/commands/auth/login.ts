@@ -39,7 +39,7 @@ export function registerLoginCommand(program: Command, context: CommandContext):
       ]) +
       `\n${"\x1b[1m"}ENVIRONMENT VARIABLES${"\x1b[0m"}\n  ELLYGENT_PASSWORD  Password for email/password authentication\n  ELLYGENT_PAT       Personal Access Token (alternative to --pat flag)\n` +
       formatLearnMore([
-        "Documentation: https://docs.ellygent.io/cli/auth",
+        "Documentation: https://www.ellygent.com/cli/docs/authentication",
         "Use 'ellygent auth --help' for all auth commands"
       ])
     )

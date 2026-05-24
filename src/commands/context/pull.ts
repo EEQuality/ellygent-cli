@@ -60,7 +60,7 @@ EXAMPLES
   $ ellygent context pull --project tractor_control --json
 
 LEARN MORE
-  Documentation: https://docs.ellygent.io/cli/context-pull
+  Documentation: https://www.ellygent.com/cli/docs/commands
   Use 'ellygent context inspect' to preview available content
 `)
     .action(

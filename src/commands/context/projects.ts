@@ -25,7 +25,7 @@ EXAMPLES
   $ ellygent context projects --org acme-corp --json
 
 LEARN MORE
-  Documentation: https://docs.ellygent.io/cli/context
+  Documentation: https://www.ellygent.com/cli/docs/commands
   Use 'ellygent context orgs' to list available organizations
 `)
     .action(

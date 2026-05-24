@@ -27,7 +27,7 @@ EXAMPLES
   $ ellygent context inspect --project tractor_control --json
 
 LEARN MORE
-  Documentation: https://docs.ellygent.io/cli/context
+  Documentation: https://www.ellygent.com/cli/docs/commands
   Use 'ellygent context versions' to list available versions
   Use 'ellygent context pull' to download context
 `)

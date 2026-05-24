@@ -72,7 +72,7 @@ ${chalk.bold("EXAMPLES")}
   ${chalk.cyan("$")} ellygent config set default-org acme-corp
 
 ${chalk.bold("LEARN MORE")}
-  Documentation: ${chalk.cyan("https://docs.ellygent.io/cli")}
+  Documentation: ${chalk.cyan("https://www.ellygent.com/cli")}
   Report issues: ${chalk.cyan("https://github.com/EEQuality/ellygent-cli/issues")}
   Use ${chalk.yellow("--help")} on any command for detailed help
 `);

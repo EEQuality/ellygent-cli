@@ -19,7 +19,7 @@ EXAMPLES
   $ ellygent context orgs --format markdown
 
 LEARN MORE
-  Documentation: https://docs.ellygent.io/cli/context
+  Documentation: https://www.ellygent.com/cli/docs/commands
   Use 'ellygent context --help' for all context commands
 `)
     .action(
