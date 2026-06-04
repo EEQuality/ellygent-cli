@@ -8,11 +8,9 @@
     "ellygent-cli": "./dist/index.js"
   },
   "files": [
-    "dist/**/*.js",
-    "dist/**/*.d.ts",
-    "!dist/**/*.test.*",
-    "!dist/**/*.spec.*",
-    "README.md"
+    "dist",
+    "README.md",
+    "package.json"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
