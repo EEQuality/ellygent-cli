@@ -54,7 +54,11 @@ function generateChecksums(directory, fileFilter = null) {
 
     if (stats.isFile()) {
       // Skip checksum files themselves
-      if (file.startsWith('checksums.')) {
+      if (
+        file.startsWith('checksums.') ||
+        file === 'manifest.json' ||
+        file === 'version.json'
+      ) {
         return;
       }
 

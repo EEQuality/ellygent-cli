@@ -3,17 +3,21 @@ name: CLI Release Pipeline
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., 0.1.0)'
+        description: "Version to release (e.g., 0.1.1)"
         required: true
+
+permissions:
+  contents: write
 
 jobs:
   build-binaries:
-    name: Build Binaries
+    name: Build binaries (${{ matrix.platform }})
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
@@ -23,181 +27,149 @@ jobs:
           - os: macos-latest
             platform: macos
     runs-on: ${{ matrix.os }}
-    
+
     steps:
       - name: Checkout CLI repository
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-      
+          node-version: "20"
+          cache: "npm"
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build TypeScript
         run: npm run build
-      
+
       - name: Build binaries
         run: npm run build:binaries
-        env:
-          CI: true
-      
+
       - name: Upload binaries
         uses: actions/upload-artifact@v4
         with:
           name: binaries-${{ matrix.platform }}
           path: dist/bin/
           retention-days: 1
-  
-  create-release:
-    name: Create Release
+
+  package-and-publish:
+    name: Package and publish release assets
     needs: build-binaries
     runs-on: ubuntu-latest
-    
-  create-release:
-    name: Create Release
-    needs: build-binaries
-    runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout CLI repository
         uses: actions/checkout@v4
-      
-      - name: Checkout Frontend repository
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download all binary artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: binaries-*
+          path: dist/bin
+          merge-multiple: true
+
+      - name: Create archives
+        run: npm run build:archives
+
+      - name: Generate checksums
+        run: npm run build:checksums
+
+      - name: Generate manifest metadata
+        run: npm run build:metadata
+
+      - name: Checkout frontend repository
         uses: actions/checkout@v4
         with:
           repository: EEQuality/ellygent-frontend
           path: ellygent-frontend
           token: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build TypeScript
-        run: npm run build
-      
-      - name: Download Windows binaries
-        uses: actions/download-artifact@v4
-        with:
-          name: binaries-windows
-          path: dist/bin/
-      - name: Download macOS binaries
-        uses: actions/download-artifact@v4
-        with:
-          name: binaries-macos
-          path: dist/bin/
-      
-      - name: Create archives
-        run: npm run build:archives
-      
-      - name: Generate checksums
-        run: npm run build:checksums
-      
-      - name: Generate version metadata
-        run: npm run build:metadata
-      
-      - name: Publish to frontend
-        working-directory: ellygent-cli
-        run: npm run build:archives
-      
-      - name: Generate checksums
-        working-directory: ellygent-cli
-        run: npm run build:checksums
-      
-      - name: Generate version metadata
-        working-directory: ellygent-cli
-        run: npm run build:metadata
-      
-      - name: Publish to frontend
-        working-directory: ellygent-cli
+
+      - name: Publish frontend download bundle
         run: npm run publish:frontend
-      
+        env:
+          FRONTEND_ROOT: ${{ github.workspace }}/ellygent-frontend
+
+      - name: Upload frontend download bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-downloads
+          path: ellygent-frontend/public/downloads/cli/
+          retention-days: 7
+
       - id: extract_version
-        working-directory: ellygent-cli
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
-      
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           name: Ellygent CLI v${{ steps.extract_version.outputs.version }}
           body: |
             ## Ellygent CLI v${{ steps.extract_version.outputs.version }}
-            
+
             ### Downloads
-            
-            Download standalone binaries for your platform:
-            
-            - **Windows (x64)**: `ellygent-v${{ steps.extract_version.outputs.version }}-windows-x64.zip`
-            - **Linux (x64)**: `ellygent-v${{ steps.extract_version.outputs.version }}-linux-x64.tar.gz`
-            - **macOS Intel (x64)**: `ellygent-v${{ steps.extract_version.outputs.version }}-macos-x64.tar.gz`
-            - **macOS Apple Silicon (ARM64)**: `ellygent-v${{ steps.extract_version.outputs.version }}-macos-arm64.tar.gz`
-            
+
+            Download binaries from the frontend-hosted distribution folder:
+
+            - [Windows x64 executable](https://ellygent.com/downloads/cli/latest/ellygent-win-x64.exe)
+            - [Download manifest](https://ellygent.com/downloads/cli/latest/manifest.json)
+            - [Download checksums](https://ellygent.com/downloads/cli/latest/checksums.txt)
+
             ### Quick Install
-            
-            **Linux/macOS:**
-            ```bash
-            curl -fsSL https://ellygent.com/cli/install.sh | sh
-            ```
-            
+
             **Windows (PowerShell):**
             ```powershell
             irm https://ellygent.com/cli/install.ps1 | iex
             ```
-            
-            **npm:**
+
+            **Linux/macOS:**
+            ```bash
+            curl -fsSL https://ellygent.com/cli/install.sh | sh
+            ```
+
+            **Development installation from GitHub:**
             ```bash
             npm install -g https://github.com/EEQuality/ellygent-cli
             ```
-            
+
             ### Checksums
-            
+
             SHA256 checksums are included in `checksums.txt`. Verify your download:
-            
+
             ```bash
             sha256sum -c checksums.txt
             ```
-            
+
             ### Documentation
-            
+
             - [Installation Guide](https://ellygent.com/cli)
             - [Getting Started](https://ellygent.com/cli/docs/getting-started)
             - [Full Documentation](https://github.com/EEQuality/ellygent-cli#readme)
           files: |
-            ellygent-cli/dist/archives/*.zip
+            dist/bin/*
             dist/archives/*.zip
             dist/archives/*.tar.gz
             dist/archives/checksums.txt
             dist/archives/checksums.json
-            
+            dist/archives/manifest.json
+            dist/archives/version.json
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Commit and push frontend changes
-        working-directory: ellygent-frontend
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add public/downloads/cli/ public/cli/
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Update CLI downloads to v${{ steps.extract_version.outputs.version }}"
-            git push origin main
-          fi
-      
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:

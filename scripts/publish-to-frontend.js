@@ -2,8 +2,8 @@
 
 /**
  * Publish CLI distribution artifacts to frontend static directory
- * 
- * Copies binaries, archives, checksums, and metadata to:
+ *
+ * Copies binaries, checksums, metadata, and installer scripts to:
  * ellygent-frontend/public/downloads/cli/
  */
 
@@ -20,7 +20,9 @@ const binDir = path.join(rootDir, 'dist', 'bin');
 const archivesDir = path.join(rootDir, 'dist', 'archives');
 
 // Target directory (frontend public)
-const frontendRoot = path.resolve(rootDir, '..', 'ellygent-frontend');
+const frontendRoot = process.env.FRONTEND_ROOT
+  ? path.resolve(process.env.FRONTEND_ROOT)
+  : path.resolve(rootDir, '..', 'ellygent-frontend');
 const publicDownloadsDir = path.join(frontendRoot, 'public', 'downloads', 'cli');
 const latestDir = path.join(publicDownloadsDir, 'latest');
 
@@ -54,6 +56,26 @@ if (!fs.existsSync(versionedDir)) {
   console.log(`✓ Created directory: ${path.relative(frontendRoot, versionedDir)}`);
 }
 
+function clearDirectoryContents(directory) {
+  if (!fs.existsSync(directory)) {
+    return;
+  }
+
+  fs.readdirSync(directory).forEach((entry) => {
+    const entryPath = path.join(directory, entry);
+    const stats = fs.statSync(entryPath);
+
+    if (stats.isDirectory()) {
+      fs.rmSync(entryPath, { recursive: true, force: true });
+    } else {
+      fs.unlinkSync(entryPath);
+    }
+  });
+}
+
+clearDirectoryContents(latestDir);
+clearDirectoryContents(versionedDir);
+
 /**
  * Copy file and report
  */
@@ -80,32 +102,26 @@ const binaries = [
   'ellygent-macos-x64',
   'ellygent-macos-arm64',
 ];
+let copiedBinaryCount = 0;
 
 binaries.forEach((binary) => {
   const source = path.join(binDir, binary);
-  copyFile(source, path.join(latestDir, binary));
+  if (copyFile(source, path.join(latestDir, binary))) {
+    copiedBinaryCount += 1;
+  }
   copyFile(source, path.join(versionedDir, binary));
-});
-
-// Copy archives
-console.log('\nCopying archives...');
-const archives = fs.readdirSync(archivesDir).filter((file) => {
-  return file.endsWith('.zip') || file.endsWith('.tar.gz');
-});
-
-archives.forEach((archive) => {
-  const source = path.join(archivesDir, archive);
-  copyFile(source, path.join(latestDir, archive));
-  copyFile(source, path.join(versionedDir, archive));
 });
 
 // Copy metadata files
 console.log('\nCopying metadata...');
-const metadataFiles = ['checksums.txt', 'checksums.json', 'version.json'];
+const metadataFiles = ['checksums.txt', 'checksums.json', 'manifest.json', 'version.json'];
+let copiedMetadataCount = 0;
 
 metadataFiles.forEach((file) => {
   const source = path.join(archivesDir, file);
-  copyFile(source, path.join(latestDir, file));
+  if (copyFile(source, path.join(latestDir, file))) {
+    copiedMetadataCount += 1;
+  }
   copyFile(source, path.join(versionedDir, file));
 });
 
@@ -135,8 +151,7 @@ const summary = {
     versioned: path.relative(frontendRoot, versionedDir),
   },
   files: {
-    binaries: binaries.length,
-    archives: archives.length,
+    binaries: copiedBinaryCount,
     metadata: metadataFiles.length,
     installers: installerScripts.length,
   },
@@ -152,6 +167,6 @@ fs.writeFileSync(
 console.log(`\n✨ CLI artifacts published successfully!`);
 console.log(`\nPublished to:`);
 console.log(`  Latest:   ${path.relative(process.cwd(), latestDir)}`);
-console.log(`  Versioned: ${path.relative(process.cwd(), versionedDir)}`);
+  console.log(`  Versioned: ${path.relative(process.cwd(), versionedDir)}`);
 console.log(`\nVersion: ${version}`);
-console.log('Files published: ' + (binaries.length + archives.length + metadataFiles.length + installerScripts.length));
+console.log('Files published: ' + (copiedBinaryCount + copiedMetadataCount + installerScripts.length));
