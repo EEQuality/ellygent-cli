@@ -246,7 +246,7 @@ ellygent --version
 
 ```bash
 # Login
-ellygent login --token <your-personal-access-token>
+ellygent auth login --token <your-personal-access-token>
 
 # Check authentication status
 ellygent whoami

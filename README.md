@@ -27,7 +27,7 @@ After installation, validate with:
 ```powershell
 ellygent --help
 ellygent --version
-ellygent login --token <your-personal-access-token>
+ellygent auth login --token <your-personal-access-token>
 ellygent whoami
 ```
 
@@ -56,7 +56,7 @@ npm link
 ## Login
 
 ```bash
-ellygent login --token <your-personal-access-token>
+ellygent auth login --token <your-personal-access-token>
 ```
 
 The login flow prompts for the Ellygent server URL if you do not provide `--url`, and it only accepts a Personal Access Token. You should enter the server root such as `https://www.ellygent.com`; the CLI adds `/api` automatically:
@@ -69,7 +69,7 @@ The login flow prompts for the Ellygent server URL if you do not provide `--url`
 If you omit `--token`, the CLI prompts for a Personal Access Token and hides your input:
 
 ```bash
-ellygent login
+ellygent auth login
 ```
 
 ### Non-interactive PAT Login
@@ -88,7 +88,7 @@ Set `ELLYGENT_TOKEN` in your environment:
 
 ```bash
 export ELLYGENT_TOKEN='elly_pat_xxxxxxxxxxxxxxxxxxxxx'
-ellygent login --url https://www.ellygent.com
+ellygent auth login --url https://www.ellygent.com
 ```
 
 **Option 2: Use .env file**
@@ -103,13 +103,13 @@ ELLYGENT_API_URL=https://www.ellygent.com
 Then login:
 
 ```bash
-ellygent login --url "$ELLYGENT_API_URL"
+ellygent auth login --url "$ELLYGENT_API_URL"
 ```
 
 **Option 3: Pass directly as flag**
 
 ```bash
-ellygent login --url https://www.ellygent.com --token elly_pat_xxxxxxxxxxxxxxxxxxxxx
+ellygent auth login --url https://www.ellygent.com --token elly_pat_xxxxxxxxxxxxxxxxxxxxx
 ```
 
 **Security notes:**
@@ -267,7 +267,7 @@ echo "ELLYGENT_TOKEN=elly_pat_xxxxxxxxxxxxxxxxxxxxx" > .env
 echo "ELLYGENT_API_URL=https://www.ellygent.com" >> .env
 
 # Login once (PAT is stored securely)
-ellygent login --url https://www.ellygent.com --token "$ELLYGENT_TOKEN"
+ellygent auth login --url https://www.ellygent.com --token "$ELLYGENT_TOKEN"
 
 # Set defaults to avoid repeating options
 ellygent config set default-org my-org
@@ -285,7 +285,7 @@ ellygent sync --version v1.0.0
 ```bash
 # Authenticate with PAT from environment
 export ELLYGENT_TOKEN="${SECRET_ELLYGENT_TOKEN}"
-ellygent login --url https://www.ellygent.com
+ellygent auth login --url https://www.ellygent.com
 
 # Download context for validation or analysis
 ellygent sync \
