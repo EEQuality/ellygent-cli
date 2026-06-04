@@ -22,22 +22,8 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts",
     "prepack": "npm run build",
-    "build:binaries": "node scripts/build-binaries.js",
-    "build:checksums": "node scripts/generate-checksums.js",
-    "build:archives": "node scripts/create-archives.js",
-    "build:metadata": "node scripts/generate-version-metadata.js",
-    "build:release": "npm run build && npm run build:binaries && npm run build:archives && npm run build:checksums && npm run build:metadata",
+    "build:release": "npm run build",
     "publish:frontend": "node scripts/publish-to-frontend.js"
-  },
-  "pkg": {
-    "targets": [
-      "node20-win-x64",
-      "node20-linux-x64",
-      "node20-macos-x64",
-      "node20-macos-arm64"
-    ],
-    "outputPath": "dist/bin",
-    "compress": "GZip"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -74,8 +60,6 @@
   "devDependencies": {
     "@vitest/coverage-v8": "^2.0.0",
     "@vitest/ui": "^2.0.0",
-    "@yao-pkg/pkg": "^6.19.0",
-    "tar": "^7.5.15",
     "vitest": "^2.0.0"
   },
   "license": "UNLICENSED"

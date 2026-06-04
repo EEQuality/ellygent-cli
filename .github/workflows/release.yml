@@ -14,19 +14,9 @@ permissions:
   contents: write
 
 jobs:
-  build-binaries:
-    name: Build binaries (${{ matrix.platform }})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            platform: windows
-          - os: ubuntu-latest
-            platform: linux
-          - os: macos-latest
-            platform: macos
-    runs-on: ${{ matrix.os }}
+  package-and-publish:
+    name: Publish GitHub npm installation assets
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout CLI repository
@@ -44,49 +34,8 @@ jobs:
       - name: Build TypeScript
         run: npm run build
 
-      - name: Build binaries
-        run: npm run build:binaries
-
-      - name: Upload binaries
-        uses: actions/upload-artifact@v4
-        with:
-          name: binaries-${{ matrix.platform }}
-          path: dist/bin/
-          retention-days: 1
-
-  package-and-publish:
-    name: Package and publish release assets
-    needs: build-binaries
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout CLI repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Download all binary artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: binaries-*
-          path: dist/bin
-          merge-multiple: true
-
-      - name: Create archives
-        run: npm run build:archives
-
-      - name: Generate checksums
-        run: npm run build:checksums
-
-      - name: Generate manifest metadata
-        run: npm run build:metadata
+      - name: Pack npm tarball for verification
+        run: npm pack
 
       - name: Checkout frontend repository
         uses: actions/checkout@v4
@@ -103,8 +52,9 @@ jobs:
       - name: Upload frontend download bundle
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-downloads
-          path: ellygent-frontend/public/downloads/cli/
+          name: frontend-cli-installers
+          path: |
+            ellygent-frontend/public/cli/
           retention-days: 7
 
       - id: extract_version
@@ -120,15 +70,17 @@ jobs:
           body: |
             ## Ellygent CLI v${{ steps.extract_version.outputs.version }}
 
-            ### Downloads
+            This release is distributed as a Node.js CLI installed directly from GitHub.
 
-            Download binaries from the frontend-hosted distribution folder:
+            ### Install from GitHub with npm
 
-            - [Windows x64 executable](https://ellygent.com/downloads/cli/latest/ellygent-win-x64.exe)
-            - [Download manifest](https://ellygent.com/downloads/cli/latest/manifest.json)
-            - [Download checksums](https://ellygent.com/downloads/cli/latest/checksums.txt)
+            ```bash
+            npm install -g git+https://github.com/EEQuality/ellygent-cli.git#v${{ steps.extract_version.outputs.version }}
+            ```
 
-            ### Quick Install
+            ### Installer scripts
+
+            The frontend-hosted installer scripts now install the same GitHub npm package.
 
             **Windows (PowerShell):**
             ```powershell
@@ -142,15 +94,7 @@ jobs:
 
             **Development installation from GitHub:**
             ```bash
-            npm install -g https://github.com/EEQuality/ellygent-cli
-            ```
-
-            ### Checksums
-
-            SHA256 checksums are included in `checksums.txt`. Verify your download:
-
-            ```bash
-            sha256sum -c checksums.txt
+            npm install -g git+https://github.com/EEQuality/ellygent-cli.git
             ```
 
             ### Documentation
@@ -159,13 +103,7 @@ jobs:
             - [Getting Started](https://ellygent.com/cli/docs/getting-started)
             - [Full Documentation](https://github.com/EEQuality/ellygent-cli#readme)
           files: |
-            dist/bin/*
-            dist/archives/*.zip
-            dist/archives/*.tar.gz
-            dist/archives/checksums.txt
-            dist/archives/checksums.json
-            dist/archives/manifest.json
-            dist/archives/version.json
+            ellygent-cli-*.tgz
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -175,6 +113,6 @@ jobs:
         with:
           name: ellygent-cli-v${{ steps.extract_version.outputs.version }}
           path: |
-            dist/bin/
-            dist/archives/
+            dist/
+            ellygent-cli-*.tgz
           retention-days: 90

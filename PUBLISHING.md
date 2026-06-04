@@ -2,38 +2,29 @@
 
 This document describes the release and distribution process for the Ellygent CLI.
 
-## Release Types
+## Release Model
 
-The CLI is distributed in two ways:
+The CLI is distributed as a Node.js package installed directly from GitHub.
 
-1. **npm package** (`@ellygent/cli`) - requires Node.js
-2. **Standalone binaries** - self-contained executables for direct download
+- Official install: `npm install -g git+https://github.com/EEQuality/ellygent-cli.git`
+- Versioned install: `npm install -g git+https://github.com/EEQuality/ellygent-cli.git#v0.1.1`
+- Frontend-hosted installer scripts remain available, but they only wrap the GitHub npm install flow.
 
 ## Distribution Architecture
 
 ```
-ellygent-cli/                    # CLI source repo
-  scripts/
-    build-binaries.js            # Generate standalone binaries
-    create-archives.js           # Package as .zip/.tar.gz
-    generate-checksums.js        # SHA256 checksums
-    generate-version-metadata.js # version.json for frontend
-    publish-to-frontend.js       # Copy to frontend repo
-    install.sh                   # Unix installer script
-    install.ps1                  # Windows installer script
+ellygent-cli/
+   scripts/
+      publish-to-frontend.js       # Copy installer scripts to frontend repo
+      install.sh                   # Unix installer wrapper for npm install
+      install.ps1                  # Windows installer wrapper for npm install
 
-ellygent-frontend/               # Frontend repo
-  public/
-    downloads/cli/
-      latest/                    # Always points to current release
-        ellygent-*.{exe,tar.gz,zip}
-        checksums.txt
-        version.json
-      v0.1.0/                    # Versioned archives
-        ...
-    cli/
-      install.sh                 # Installer endpoint
-      install.ps1                # Installer endpoint
+ellygent-frontend/
+   public/
+      cli/
+         install.sh
+         install.ps1
+         distribution-summary.json
 ```
 
 ## Automated Release Process
@@ -68,30 +59,23 @@ Releases are automated via GitHub Actions.
 
 5. **GitHub Actions automatically:**
    - Builds TypeScript to JavaScript
-   - Compiles standalone binaries for all platforms
-   - Creates .zip and .tar.gz archives
-   - Generates SHA256 checksums
-   - Generates version.json metadata
-   - Creates GitHub Release with artifacts
-   - Publishes binaries to frontend public directory
-   - Commits and pushes frontend changes
+   - Packs the npm tarball for verification
+   - Publishes installer scripts to the frontend public directory
+   - Creates GitHub Release notes with the GitHub npm install command
 
 ### Manual Build (Local Testing)
 
-Build all release artifacts locally:
+Build the distributable npm package locally:
 
 ```bash
-# Full release build
+# Release build
 npm run build:release
 
 # Individual steps
 npm run build              # TypeScript → JavaScript
-npm run build:binaries     # Standalone binaries
-npm run build:archives     # .zip/.tar.gz
-npm run build:checksums    # checksums.txt
-npm run build:metadata     # version.json
+npm pack                   # Verify published package contents
 
-# Publish to frontend (requires ../ellygent-frontend)
+# Publish installer scripts to frontend (requires ../ellygent-frontend)
 npm run publish:frontend
 ```
 
@@ -100,22 +84,8 @@ npm run publish:frontend
 After build, verify:
 
 ```bash
-# Check binaries
-ls -lh dist/bin/
-# ellygent-win-x64.exe
-# ellygent-linux-x64
-# ellygent-macos-x64
-# ellygent-macos-arm64
-
-# Check archives
-ls -lh dist/archives/
-# ellygent-v0.1.0-windows-x64.zip
-# ellygent-v0.1.0-linux-x64.tar.gz
-# ellygent-v0.1.0-macos-x64.tar.gz
-# ellygent-v0.1.0-macos-arm64.tar.gz
-# checksums.txt
-# checksums.json
-# version.json
+ls -lh dist/
+npm pack --dry-run
 ```
 
 ## npm Publishing
@@ -218,20 +188,18 @@ Before publishing a new version:
 
 ## Installing During Development
 
-Until the npm registry package is published, install from GitHub:
+Install from GitHub:
 
 ```powershell
 # Install globally
-npm install -g https://github.com/EEQuality/ellygent-cli
+npm install -g git+https://github.com/EEQuality/ellygent-cli.git
 
 # Install as dev dependency
-npm install --save-dev https://github.com/EEQuality/ellygent-cli
+npm install --save-dev git+https://github.com/EEQuality/ellygent-cli.git
 
 # Install from specific version
-npm install -g https://github.com/EEQuality/ellygent-cli@0.1.0
+npm install -g git+https://github.com/EEQuality/ellygent-cli.git#v0.1.0
 ```
-
-Once `@ellygent/cli` is published to the public npm registry, you can add the registry package as a normal npm dependency.
 
 ## Unpublishing (Emergency Only)
 
