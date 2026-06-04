@@ -62,7 +62,7 @@ ls -la public/cli/
 
 ```bash
 # Direct install from GitHub
-npm install -g git+https://github.com/EEQuality/ellygent-cli.git
+npm install -g https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz
 
 # Hosted installer wrappers
 curl -fsSL https://ellygent.com/cli/install.sh | sh
@@ -83,14 +83,14 @@ Key outputs:
 - Built `dist/` JavaScript bundle
 - Packed npm tarball
 - Updated frontend `public/cli/` installer scripts
-- GitHub Release notes pointing to GitHub npm installation
+- GitHub Release notes pointing to GitHub Release npm installation
 
 ## For End Users
 
 ### Install the CLI
 
 ```bash
-npm install -g git+https://github.com/EEQuality/ellygent-cli.git
+npm install -g https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz
 ```
 
 Optional wrappers:
@@ -126,10 +126,10 @@ irm https://ellygent.com/cli/install.ps1 | iex
 
 **Install directly from GitHub with npm:**
 ```bash
-npm install -g git+https://github.com/EEQuality/ellygent-cli.git
+npm install -g https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz
 ```
 
-This GitHub-based workflow is the official distribution path. It installs directly from the repository and does not rely on the public npm registry.
+This GitHub-based workflow is the official distribution path. It installs the packaged release artifact directly from GitHub and does not rely on the public npm registry.
 
 ### Verification
 
@@ -168,7 +168,7 @@ ellygent --help
 | Create release | Tag and push: `git tag v0.1.1 && git push origin v0.1.1` |
 | Install (Unix) | `curl -fsSL https://ellygent.com/cli/install.sh \| sh` |
 | Install (Windows) | `irm https://ellygent.com/cli/install.ps1 \| iex` |
-| Install (npm) | `npm install -g git+https://github.com/EEQuality/ellygent-cli.git` |
+| Install (npm) | `npm install -g https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz` |
 | Verify install | `ellygent --version` |
 | View install docs | https://ellygent.com/cli |
 | View releases | https://github.com/EEQuality/ellygent-cli/releases |

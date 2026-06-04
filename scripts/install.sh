@@ -1,7 +1,7 @@
 #!/bin/sh
 # Ellygent CLI Installer for Linux/macOS
 #
-# Installs the CLI from the GitHub repository using npm.
+# Installs the CLI from a GitHub Release package using npm.
 # Usage:
 #   curl -fsSL https://ellygent.com/cli/install.sh | sh
 #   wget -qO- https://ellygent.com/cli/install.sh | sh
@@ -11,11 +11,17 @@
 
 set -e
 
-VERSION="${VERSION:-main}"
-REPOSITORY_URL="git+https://github.com/EEQuality/ellygent-cli.git"
+VERSION="${VERSION:-latest}"
+PACKAGE_URL="https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz"
 
-if [ "$VERSION" != "main" ]; then
-  REPOSITORY_URL="${REPOSITORY_URL}#${VERSION}"
+if [ "$VERSION" != "latest" ]; then
+  NORMALIZED_VERSION="$VERSION"
+  case "$NORMALIZED_VERSION" in
+    v*) ;;
+    *) NORMALIZED_VERSION="v${NORMALIZED_VERSION}" ;;
+  esac
+  PACKAGE_VERSION="${NORMALIZED_VERSION#v}"
+  PACKAGE_URL="https://github.com/EEQuality/ellygent-cli/releases/download/${NORMALIZED_VERSION}/ellygent-cli-${PACKAGE_VERSION}.tgz"
 fi
 
 RED='\033[0;31m'
@@ -50,15 +56,15 @@ require_command() {
 
 main() {
   echo ""
-  info "Installing Ellygent CLI from GitHub with npm"
+  info "Installing Ellygent CLI from GitHub Release with npm"
   echo ""
 
   require_command node "Install Node.js 20+ from https://nodejs.org/"
   require_command npm "Install npm by installing Node.js 20+ from https://nodejs.org/"
   require_command git "Install Git from https://git-scm.com/downloads"
 
-  info "npm package source: ${REPOSITORY_URL}"
-  npm install -g "$REPOSITORY_URL"
+  info "npm package source: ${PACKAGE_URL}"
+  npm install -g "$PACKAGE_URL"
 
   if command -v ellygent >/dev/null 2>&1; then
     INSTALLED_VERSION=$(ellygent --version 2>/dev/null || echo "unknown")

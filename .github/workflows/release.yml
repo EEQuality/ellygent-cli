@@ -37,6 +37,11 @@ jobs:
       - name: Pack npm tarball for verification
         run: npm pack
 
+      - name: Prepare latest npm tarball alias
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          cp "ellygent-cli-${VERSION}.tgz" ellygent-cli-latest.tgz
+
       - name: Checkout frontend repository
         uses: actions/checkout@v4
         with:
@@ -70,17 +75,23 @@ jobs:
           body: |
             ## Ellygent CLI v${{ steps.extract_version.outputs.version }}
 
-            This release is distributed as a Node.js CLI installed directly from GitHub.
+            This release is distributed as a Node.js CLI installed from GitHub Release package assets.
 
-            ### Install from GitHub with npm
+            ### Install latest with npm
 
             ```bash
-            npm install -g git+https://github.com/EEQuality/ellygent-cli.git#v${{ steps.extract_version.outputs.version }}
+            npm install -g https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz
+            ```
+
+            ### Install this version with npm
+
+            ```bash
+            npm install -g https://github.com/EEQuality/ellygent-cli/releases/download/v${{ steps.extract_version.outputs.version }}/ellygent-cli-${{ steps.extract_version.outputs.version }}.tgz
             ```
 
             ### Installer scripts
 
-            The frontend-hosted installer scripts now install the same GitHub npm package.
+            The frontend-hosted installer scripts now install the same GitHub Release package.
 
             **Windows (PowerShell):**
             ```powershell
@@ -92,9 +103,9 @@ jobs:
             curl -fsSL https://ellygent.com/cli/install.sh | sh
             ```
 
-            **Development installation from GitHub:**
+            **Version-pinned installer script:**
             ```bash
-            npm install -g git+https://github.com/EEQuality/ellygent-cli.git
+            VERSION=v${{ steps.extract_version.outputs.version }} curl -fsSL https://ellygent.com/cli/install.sh | sh
             ```
 
             ### Documentation
@@ -104,6 +115,7 @@ jobs:
             - [Full Documentation](https://github.com/EEQuality/ellygent-cli#readme)
           files: |
             ellygent-cli-*.tgz
+            ellygent-cli-latest.tgz
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -115,4 +127,5 @@ jobs:
           path: |
             dist/
             ellygent-cli-*.tgz
+            ellygent-cli-latest.tgz
           retention-days: 90

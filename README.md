@@ -6,10 +6,10 @@ Developer CLI for authenticating with Ellygent and downloading AI-optimized engi
 
 ### Quick Install (Recommended)
 
-Install directly from GitHub with npm:
+Install directly from the latest GitHub Release package with npm:
 
 ```bash
-npm install -g git+https://github.com/EEQuality/ellygent-cli.git
+npm install -g https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz
 ```
 
 This is the official distribution path. Standalone executables are no longer published.
@@ -26,7 +26,7 @@ curl -fsSL https://ellygent.com/cli/install.sh | sh
 
 The official installer scripts are npm wrappers. They:
 - Check that Node.js, npm, and Git are installed.
-- Install the CLI from the GitHub repository with npm.
+- Install the CLI from the latest GitHub Release package with npm.
 - Verify the installed CLI command and print next steps.
 
 After installation, validate with:
@@ -38,13 +38,13 @@ ellygent auth login --token <your-personal-access-token>
 ellygent whoami
 ```
 
-### Install a specific GitHub ref
+### Install a specific release
 
 ```bash
-npm install -g git+https://github.com/EEQuality/ellygent-cli.git#v0.1.1
+npm install -g https://github.com/EEQuality/ellygent-cli/releases/download/v0.1.1/ellygent-cli-0.1.1.tgz
 ```
 
-This installs directly from GitHub and does not depend on the public npm registry.
+This installs directly from GitHub Releases and does not depend on the public npm registry.
 
 ### Build from Source
 

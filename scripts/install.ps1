@@ -1,6 +1,6 @@
 # Ellygent CLI Installer for Windows
 #
-# Installs the CLI from the GitHub repository using npm.
+# Installs the CLI from a GitHub Release package using npm.
 # Usage:
 #   irm https://ellygent.com/cli/install.ps1 | iex
 #
@@ -8,16 +8,18 @@
 #   $env:VERSION = "v0.1.1"; irm https://ellygent.com/cli/install.ps1 | iex
 
 param(
-    [string]$Version = "main"
+    [string]$Version = "latest"
 )
 
 if ($env:VERSION) {
     $Version = $env:VERSION
 }
 
-$RepositoryUrl = "git+https://github.com/EEQuality/ellygent-cli.git"
-if ($Version -and $Version -ne "main") {
-    $RepositoryUrl = "$RepositoryUrl#$Version"
+$PackageUrl = "https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz"
+if ($Version -and $Version -ne "latest") {
+    $normalizedVersion = if ($Version.StartsWith("v")) { $Version } else { "v$Version" }
+    $packageVersion = $normalizedVersion.TrimStart("v")
+    $PackageUrl = "https://github.com/EEQuality/ellygent-cli/releases/download/$normalizedVersion/ellygent-cli-$packageVersion.tgz"
 }
 
 function Write-Info {
@@ -76,15 +78,15 @@ function Add-NpmBinToPathIfNeeded {
 
 function Install-EllygentCli {
     Write-Host ""
-    Write-Info "Installing Ellygent CLI from GitHub with npm"
+    Write-Info "Installing Ellygent CLI from GitHub Release with npm"
     Write-Host ""
 
     Assert-Command -Name "node" -InstallHint "Install Node.js 20+ from https://nodejs.org/"
     Assert-Command -Name "npm" -InstallHint "Install npm by installing Node.js 20+ from https://nodejs.org/"
     Assert-Command -Name "git" -InstallHint "Install Git from https://git-scm.com/download/win"
 
-    Write-Info "npm package source: $RepositoryUrl"
-    & npm install -g $RepositoryUrl
+    Write-Info "npm package source: $PackageUrl"
+    & npm install -g $PackageUrl
     if ($LASTEXITCODE -ne 0) {
         Write-Fail "npm installation failed"
         exit $LASTEXITCODE

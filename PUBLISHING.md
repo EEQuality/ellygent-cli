@@ -4,11 +4,11 @@ This document describes the release and distribution process for the Ellygent CL
 
 ## Release Model
 
-The CLI is distributed as a Node.js package installed directly from GitHub.
+The CLI is distributed as a Node.js package installed from GitHub Release assets.
 
-- Official install: `npm install -g git+https://github.com/EEQuality/ellygent-cli.git`
-- Versioned install: `npm install -g git+https://github.com/EEQuality/ellygent-cli.git#v0.1.1`
-- Frontend-hosted installer scripts remain available, but they only wrap the GitHub npm install flow.
+- Official install: `npm install -g https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz`
+- Versioned install: `npm install -g https://github.com/EEQuality/ellygent-cli/releases/download/v0.1.1/ellygent-cli-0.1.1.tgz`
+- Frontend-hosted installer scripts remain available, but they only wrap the GitHub Release npm install flow.
 
 ## Distribution Architecture
 
@@ -61,7 +61,7 @@ Releases are automated via GitHub Actions.
    - Builds TypeScript to JavaScript
    - Packs the npm tarball for verification
    - Publishes installer scripts to the frontend public directory
-   - Creates GitHub Release notes with the GitHub npm install command
+   - Creates GitHub Release notes with the GitHub Release npm install command
 
 ### Manual Build (Local Testing)
 
@@ -188,17 +188,17 @@ Before publishing a new version:
 
 ## Installing During Development
 
-Install from GitHub:
+Install from GitHub Release assets:
 
 ```powershell
 # Install globally
-npm install -g git+https://github.com/EEQuality/ellygent-cli.git
+npm install -g https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz
 
 # Install as dev dependency
-npm install --save-dev git+https://github.com/EEQuality/ellygent-cli.git
+npm install --save-dev https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz
 
 # Install from specific version
-npm install -g git+https://github.com/EEQuality/ellygent-cli.git#v0.1.0
+npm install -g https://github.com/EEQuality/ellygent-cli/releases/download/v0.1.0/ellygent-cli-0.1.0.tgz
 ```
 
 ## Unpublishing (Emergency Only)
