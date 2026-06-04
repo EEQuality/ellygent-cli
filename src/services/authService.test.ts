@@ -144,4 +144,24 @@ describe("AuthService", () => {
       })
     );
   });
+
+  it("strips duplicated trailing /api segments from the stored prompt default", async () => {
+    mocks.input.mockResolvedValue("https://www.ellygent.com/api/");
+    mocks.password.mockResolvedValue("elly_pat_prompt_123");
+    const configStore = createConfigStore({ apiUrl: "https://www.ellygent.com/api/api" });
+    const service = new AuthService(configStore as any);
+
+    await service.login({});
+
+    expect(mocks.input).toHaveBeenCalledWith(
+      expect.objectContaining({
+        default: "https://www.ellygent.com"
+      })
+    );
+    expect(configStore.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apiUrl: "https://www.ellygent.com/api"
+      })
+    );
+  });
 });

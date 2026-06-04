@@ -20,7 +20,7 @@ export function normalizeApiBaseUrl(input: string): string {
     .split("/")
     .filter(Boolean);
 
-  if (segments[segments.length - 1] === "api") {
+  while (segments[segments.length - 1] === "api") {
     segments.pop();
   }
 
@@ -41,7 +41,7 @@ export function getServerUrlFromApiBase(apiBaseUrl: string): string {
     .split("/")
     .filter(Boolean);
 
-  if (segments[segments.length - 1] === "api") {
+  while (segments[segments.length - 1] === "api") {
     segments.pop();
   }
 

@@ -7,6 +7,7 @@ describe("normalizeApiBaseUrl", () => {
     expect(normalizeApiBaseUrl("https://www.ellygent.com/")).toBe("https://www.ellygent.com/api");
     expect(normalizeApiBaseUrl("https://www.ellygent.com/api")).toBe("https://www.ellygent.com/api");
     expect(normalizeApiBaseUrl("https://www.ellygent.com/api/")).toBe("https://www.ellygent.com/api");
+    expect(normalizeApiBaseUrl("https://www.ellygent.com/api/api/")).toBe("https://www.ellygent.com/api");
   });
 
   it("normalizes localhost URLs and preserves http", () => {
@@ -30,5 +31,6 @@ describe("getServerUrlFromApiBase", () => {
   it("returns the original server URL without /api", () => {
     expect(getServerUrlFromApiBase("https://www.ellygent.com/api")).toBe("https://www.ellygent.com");
     expect(getServerUrlFromApiBase("http://127.0.0.1:8000/api")).toBe("http://127.0.0.1:8000");
+    expect(getServerUrlFromApiBase("https://www.ellygent.com/api/api")).toBe("https://www.ellygent.com");
   });
 });
