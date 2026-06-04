@@ -10,7 +10,6 @@ import { registerWhoAmICommand } from "./commands/whoami.js";
 import { formatCommandCategories } from "./utils/help.js";
 
 // Legacy command imports for backward compatibility
-import { registerLoginCommand as registerLegacyLogin } from "./commands/login.js";
 import { registerDiscoveryCommands as registerLegacyDiscovery } from "./commands/discovery.js";
 import { registerSyncCommand as registerLegacySync } from "./commands/sync.js";
 import { registerConfigCommand as registerLegacyConfig } from "./commands/config.js";
@@ -113,22 +112,6 @@ function registerLegacyCommandsWithWarnings(program: Command, context: typeof cr
     console.warn(chalk.yellow("  This command will be removed in v1.0.0"));
     console.warn("");
   };
-
-  // Legacy: ellygent auth login → ellygent auth login
-    const legacyLogin = program
-        .command("login", { hidden: true })
-        .description("[DEPRECATED] Use 'ellygent auth login' instead")
-        .option("--url <url>", "Ellygent server URL")
-        .option("--api-url <url>", "Deprecated alias for --url")
-        .option("--token <token>", "Personal Access Token")
-    .action(async (...args) => {
-      warnDeprecated("login", "auth login");
-      // Forward to new command by invoking it programmatically
-      const authLoginCmd = program.commands.find(c => c.name() === "auth")?.commands.find(c => c.name() === "login");
-      if (authLoginCmd) {
-        await authLoginCmd.parseAsync(process.argv.slice(2), { from: "user" });
-      }
-    });
 
   // Legacy: ellygent orgs → ellygent context orgs
   const legacyOrgs = program
