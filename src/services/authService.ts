@@ -18,7 +18,7 @@ export class AuthService {
       options.apiUrl ||
         (await input({
           message: "Ellygent API URL",
-          default: current.apiUrl || "http://localhost:8000"
+          default: current.apiUrl || "https://www.ellygent.com/api/"
         }))
     );
 

@@ -138,9 +138,9 @@ describe('normalizeApiUrl', () => {
   });
 
   it('preserves port', () => {
-    const url = normalizeApiUrl('http://localhost:8000');
+    const url = normalizeApiUrl('https://www.ellygent.com/api/');
     
-    expect(url).toBe('http://localhost:8000');
+    expect(url).toBe('https://www.ellygent.com/api/');
   });
 
   it('preserves pathname', () => {

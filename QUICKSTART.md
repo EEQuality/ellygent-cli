@@ -265,7 +265,7 @@ $hash = (Get-FileHash .\ellygent-win-x64.exe).Hash
 
 ```bash
 # Login
-ellygent login
+ellygent auth login
 
 # List projects
 ellygent projects --org my-org

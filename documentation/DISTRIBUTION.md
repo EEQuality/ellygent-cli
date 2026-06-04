@@ -311,7 +311,7 @@ ellygent-frontend/public/
 
 - name: Use CLI
   run: |
-    ellygent login --api-url $API_URL --pat ${{ secrets.ELLYGENT_PAT }}
+    ellygent auth login --api-url $API_URL --pat ${{ secrets.ELLYGENT_PAT }}
     ellygent sync --project $PROJECT_ID --version $VERSION
 ```
 

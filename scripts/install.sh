@@ -167,7 +167,7 @@ main() {
     success "Installed version: ${installed_version}"
     echo ""
     info "Get started with:"
-    echo "  ellygent login"
+    echo "  ellygent auth login"
     echo "  ellygent --help"
   else
     warn "Installation complete, but 'ellygent' is not in PATH"

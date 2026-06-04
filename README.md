@@ -48,7 +48,7 @@ npm link
 ## Login
 
 ```bash
-ellygent login
+ellygent auth login
 ```
 
 The login flow prompts for:
@@ -67,7 +67,7 @@ Passwords are never persisted. The CLI stores API URL and issued tokens in the u
 For non-interactive login, set `ELLYGENT_PASSWORD` and pass URL/email:
 
 ```bash
-ELLYGENT_PASSWORD='...' ellygent login --api-url https://api.example.com --email dev@example.com
+ELLYGENT_PASSWORD='...' ellygent auth login --api-url https://api.example.com --email dev@example.com
 ```
 
 ### Login with Personal Access Token (PAT)
@@ -88,7 +88,7 @@ Set `ELLYGENT_PAT` in your environment:
 
 ```bash
 export ELLYGENT_PAT='elly_pat_xxxxxxxxxxxxxxxxxxxxx'
-ellygent login --api-url https://api.example.com
+ellygent auth login --api-url https://api.example.com
 ```
 
 **Option 2: Use .env file**
@@ -103,13 +103,13 @@ ELLYGENT_API_URL=https://api.example.com
 Then login:
 
 ```bash
-ellygent login --api-url $ELLYGENT_API_URL
+ellygent auth login --api-url $ELLYGENT_API_URL
 ```
 
 **Option 3: Pass directly as flag**
 
 ```bash
-ellygent login --api-url https://api.example.com --pat elly_pat_xxxxxxxxxxxxxxxxxxxxx
+ellygent auth login --api-url https://api.example.com --pat elly_pat_xxxxxxxxxxxxxxxxxxxxx
 ```
 
 **Security notes:**
@@ -269,7 +269,7 @@ echo "ELLYGENT_PAT=elly_pat_xxxxxxxxxxxxxxxxxxxxx" > .env
 echo "ELLYGENT_API_URL=https://www.ellygent.com/api/" >> .env
 
 # Login once (PAT is stored securely)
-ellygent login --api-url https://www.ellygent.com/api/
+ellygent auth login --api-url https://www.ellygent.com/api/
 
 # Set defaults to avoid repeating options
 ellygent config set default-org my-org
@@ -287,7 +287,7 @@ ellygent sync --version v1.0.0
 ```bash
 # Authenticate with PAT from environment
 export ELLYGENT_PAT="${SECRET_ELLYGENT_PAT}"
-ellygent login --api-url https://www.ellygent.com/api/
+ellygent auth login --api-url https://www.ellygent.com/api/
 
 # Download context for validation or analysis
 ellygent sync \

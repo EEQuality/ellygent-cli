@@ -108,7 +108,7 @@ function registerLegacyCommandsWithWarnings(program: Command, context: typeof cr
     console.warn("");
   };
 
-  // Legacy: ellygent login → ellygent auth login
+  // Legacy: ellygent auth login → ellygent auth login
   const legacyLogin = program
     .command("login", { hidden: true })
     .description("[DEPRECATED] Use 'ellygent auth login' instead")
