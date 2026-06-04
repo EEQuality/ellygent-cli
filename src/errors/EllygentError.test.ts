@@ -91,7 +91,7 @@ describe('AuthenticationError', () => {
     
     expect(error.message).toBe('Token expired');
     expect(error.exitCode).toBe(2);
-    expect(error.suggestions?.some(s => s.includes('auth login'))).toBe(true);
+    expect(error.suggestions?.some(s => s.includes('login --token'))).toBe(true);
   });
 });
 

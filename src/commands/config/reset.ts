@@ -14,7 +14,7 @@ EXAMPLES
 
 WARNING
   This will clear all configuration including credentials.
-  You will need to run 'ellygent auth login' again.
+  You will need to run 'ellygent login --token <PAT>' again.
 
 LEARN MORE
   Use 'ellygent config list' to see current configuration
@@ -27,7 +27,7 @@ LEARN MORE
         await context.configStore.save({});
         
         outputSuccess("Configuration reset to defaults", formatter);
-        outputInfo("Run 'ellygent auth login' to re-authenticate", formatter);
+        outputInfo("Run 'ellygent login --token <PAT>' to re-authenticate", formatter);
       })
     );
 }

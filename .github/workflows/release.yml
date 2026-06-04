@@ -90,7 +90,7 @@ jobs:
         with:
           name: binaries-windows
           path: dist/bin/
-      Download macOS binaries
+      - name: Download macOS binaries
         uses: actions/download-artifact@v4
         with:
           name: binaries-macos

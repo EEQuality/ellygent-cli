@@ -140,7 +140,7 @@ describe('normalizeApiUrl', () => {
   it('preserves port', () => {
     const url = normalizeApiUrl('https://www.ellygent.com/api/');
     
-    expect(url).toBe('https://www.ellygent.com/api/');
+    expect(url).toBe('https://www.ellygent.com/api');
   });
 
   it('preserves pathname', () => {

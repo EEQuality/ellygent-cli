@@ -32,6 +32,38 @@ const packageJson = JSON.parse(
 );
 const version = packageJson.version;
 
+function removeStaleArchives(currentVersion) {
+  const prefix = 'ellygent-v';
+  const currentArchiveNames = new Set([
+    `ellygent-v${currentVersion}-windows-x64.zip`,
+    `ellygent-v${currentVersion}-linux-x64.tar.gz`,
+    `ellygent-v${currentVersion}-macos-x64.tar.gz`,
+    `ellygent-v${currentVersion}-macos-arm64.tar.gz`,
+  ]);
+
+  fs.readdirSync(archivesDir).forEach((file) => {
+    const filePath = path.join(archivesDir, file);
+    if (!fs.statSync(filePath).isFile()) {
+      return;
+    }
+
+    if (!file.startsWith(prefix)) {
+      return;
+    }
+
+    if (currentArchiveNames.has(file)) {
+      return;
+    }
+
+    if (file.endsWith('.zip') || file.endsWith('.tar.gz')) {
+      fs.unlinkSync(filePath);
+      console.log(`🧹 Removed stale archive ${file}`);
+    }
+  });
+}
+
+removeStaleArchives(version);
+
 // Archive configurations
 const archives = [
   {

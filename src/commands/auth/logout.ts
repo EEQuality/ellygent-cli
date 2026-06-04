@@ -13,7 +13,7 @@ EXAMPLES
   $ ellygent auth logout
 
 LEARN MORE
-  Use 'ellygent auth login' to authenticate again
+  Use 'ellygent login --token <PAT>' to authenticate again
 `)
     .action(
       withErrorHandling(async (options, command) => {
@@ -25,15 +25,14 @@ LEARN MORE
           return;
         }
         
-        const isPAT = config.accessToken.startsWith("elly_pat_");
-        const authType = isPAT ? "Personal Access Token" : "session";
-        
+        const authType = "Personal Access Token";
+
         // Clear auth-related fields
         await context.configStore.set("accessToken", "");
         await context.configStore.set("refreshToken", "");
         
         outputSuccess(`Logged out successfully (${authType})`, formatter);
-        outputInfo("Run 'ellygent auth login' to re-authenticate", formatter);
+        outputInfo("Run 'ellygent login --token <PAT>' to re-authenticate", formatter);
       })
     );
 }

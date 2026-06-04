@@ -6,7 +6,7 @@
 #   wget -qO- https://ellygent.com/cli/install.sh | sh
 #
 # Or with specific version:
-#   VERSION=0.1.0 curl -fsSL https://ellygent.com/cli/install.sh | sh
+#   VERSION=0.1.1 curl -fsSL https://ellygent.com/cli/install.sh | sh
 
 set -e
 
@@ -167,7 +167,8 @@ main() {
     success "Installed version: ${installed_version}"
     echo ""
     info "Get started with:"
-    echo "  ellygent auth login"
+    echo "  ellygent login --token <your-personal-access-token>"
+    echo "  ellygent whoami"
     echo "  ellygent --help"
   else
     warn "Installation complete, but 'ellygent' is not in PATH"

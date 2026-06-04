@@ -19,7 +19,7 @@ The Ellygent CLI uses a multi-channel distribution strategy to maximize accessib
 
 - **Direct binary downloads** - Self-contained executables
 - **Installer scripts** - Automated installation with verification
-- **npm package** - For Node.js users
+- **Development npm workflow** - For contributor or future npm distribution
 - **Package managers** - Future: Homebrew, Chocolatey, apt, yum
 
 ## Distribution Channels
@@ -96,16 +96,16 @@ Features:
 - Automatic PATH addition
 - User-scoped installation (no admin required)
 
-### 4. npm Package
+### 4. Development Installation from GitHub
 
-Traditional npm distribution for Node.js environments.
+Use this only for contributors or when you need a Node-based local install from the repository itself.
 
 ```bash
 npm install -g https://github.com/EEQuality/ellygent-cli
 ```
 
-**Registry:** npmjs.com  
-**Package:** `@ellygent/cli`  
+**Status:** Not published to the npm registry yet  
+**Registry package:** `@ellygent/cli`  
 **Requires:** Node.js >= 20.0.0
 
 ## Build Pipeline
@@ -297,10 +297,12 @@ ellygent-frontend/public/
    - Move to PATH
    - Make executable (Unix)
 
-4. **npm Installation**
+4. **Development installation from GitHub**
    ```bash
    npm install -g https://github.com/EEQuality/ellygent-cli
    ```
+
+   This installs directly from GitHub and does not depend on the public npm registry. The npm registry package is future-only until `@ellygent/cli` is published.
 
 ### For CI/CD
 
@@ -311,7 +313,7 @@ ellygent-frontend/public/
 
 - name: Use CLI
   run: |
-    ellygent auth login --api-url $API_URL --pat ${{ secrets.ELLYGENT_PAT }}
+    ellygent login --api-url $API_URL --token ${{ secrets.ELLYGENT_TOKEN }}
     ellygent sync --project $PROJECT_ID --version $VERSION
 ```
 

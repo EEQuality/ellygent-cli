@@ -67,7 +67,9 @@ const metadata = {
   npm: {
     package: '@ellygent/cli',
     version,
+    published: false,
     install: 'npm install -g https://github.com/EEQuality/ellygent-cli',
+    note: 'Development installation from GitHub only. npm registry installation is future-only until @ellygent/cli is published.',
   },
   checksumAlgorithm: 'sha256',
 };

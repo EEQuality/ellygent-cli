@@ -228,10 +228,12 @@ Windows (PowerShell):
 irm https://ellygent.com/cli/install.ps1 | iex
 ```
 
-**Alternative (npm):**
+**Development installation from GitHub:**
 ```bash
 npm install -g https://github.com/EEQuality/ellygent-cli
 ```
+
+This GitHub-based workflow is for contributors and local development. It installs directly from the repository and does not rely on the public npm registry.
 
 **Manual:**
 1. Visit https://ellygent.com/cli
@@ -265,7 +267,10 @@ $hash = (Get-FileHash .\ellygent-win-x64.exe).Hash
 
 ```bash
 # Login
-ellygent auth login
+ellygent login --token <your-personal-access-token>
+
+# Check authentication status
+ellygent whoami
 
 # List projects
 ellygent projects --org my-org
@@ -288,7 +293,7 @@ ellygent --help
 | Create release | Tag and push: `git tag v0.1.1 && git push origin v0.1.1` |
 | Install (Unix) | `curl -fsSL https://ellygent.com/cli/install.sh \| sh` |
 | Install (Windows) | `irm https://ellygent.com/cli/install.ps1 \| iex` |
-| Install (npm) | `npm install -g https://github.com/EEQuality/ellygent-cli` |
+| Install (dev) | `npm install -g https://github.com/EEQuality/ellygent-cli` |
 | Test binary | `./dist/bin/ellygent-* --version` |
 | Verify checksum | `sha256sum -c checksums.txt` |
 | View downloads | https://ellygent.com/cli |

@@ -4,7 +4,7 @@
 #   irm https://ellygent.com/cli/install.ps1 | iex
 #
 # Or with specific version:
-#   $env:VERSION = "0.1.0"; irm https://ellygent.com/cli/install.ps1 | iex
+#   $env:VERSION = "0.1.1"; irm https://ellygent.com/cli/install.ps1 | iex
 
 param(
     [string]$InstallDir = "$env:LOCALAPPDATA\Ellygent\bin",
@@ -219,7 +219,8 @@ function Install-EllygentCLI {
     
     Write-Host ""
     Write-Info "Get started with:"
-    Write-Host "  ellygent auth login"
+    Write-Host "  ellygent login --token <your-personal-access-token>"
+    Write-Host "  ellygent whoami"
     Write-Host "  ellygent --help"
     Write-Host ""
     

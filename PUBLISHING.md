@@ -216,20 +216,22 @@ Before publishing a new version:
    - Copy CHANGELOG.md content for release notes
    - Attach tarball if needed
 
-## Installing Published Package
+## Installing During Development
 
-Users can install via npm:
+Until the npm registry package is published, install from GitHub:
 
 ```powershell
 # Install globally
 npm install -g https://github.com/EEQuality/ellygent-cli
 
 # Install as dev dependency
-npm install --save-dev @ellygent/cli
+npm install --save-dev https://github.com/EEQuality/ellygent-cli
 
 # Install from specific version
 npm install -g https://github.com/EEQuality/ellygent-cli@0.1.0
 ```
+
+Once `@ellygent/cli` is published to the public npm registry, you can add the registry package as a normal npm dependency.
 
 ## Unpublishing (Emergency Only)
 

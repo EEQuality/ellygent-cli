@@ -18,6 +18,10 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const binDir = path.join(rootDir, 'dist', 'bin');
 const archivesDir = path.join(rootDir, 'dist', 'archives');
+const packageJson = JSON.parse(
+  fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8')
+);
+const version = packageJson.version;
 
 console.log('🔐 Generating checksums...\n');
 
@@ -34,7 +38,7 @@ function calculateSHA256(filePath) {
 /**
  * Generate checksums for all files in a directory
  */
-function generateChecksums(directory, filePattern = null) {
+function generateChecksums(directory, fileFilter = null) {
   const checksums = {};
 
   if (!fs.existsSync(directory)) {
@@ -54,8 +58,8 @@ function generateChecksums(directory, filePattern = null) {
         return;
       }
 
-      // Apply pattern filter if provided
-      if (filePattern && !file.match(filePattern)) {
+      // Apply filter if provided
+      if (fileFilter && !fileFilter(file)) {
         return;
       }
 
@@ -68,13 +72,22 @@ function generateChecksums(directory, filePattern = null) {
   return checksums;
 }
 
+function isCurrentReleaseArchive(file) {
+  return (
+    file === `ellygent-v${version}-windows-x64.zip` ||
+    file === `ellygent-v${version}-linux-x64.tar.gz` ||
+    file === `ellygent-v${version}-macos-x64.tar.gz` ||
+    file === `ellygent-v${version}-macos-arm64.tar.gz`
+  );
+}
+
 // Generate checksums for binaries
 console.log('Binaries:');
 const binaryChecksums = generateChecksums(binDir);
 
 // Generate checksums for archives
 console.log('\nArchives:');
-const archiveChecksums = generateChecksums(archivesDir);
+const archiveChecksums = generateChecksums(archivesDir, isCurrentReleaseArchive);
 
 // Combine all checksums
 const allChecksums = { ...binaryChecksums, ...archiveChecksums };
@@ -91,9 +104,7 @@ console.log(`\n✓ Written: checksums.txt`);
 // Write checksums.json (machine-readable)
 const checksumJsonPath = path.join(archivesDir, 'checksums.json');
 const checksumData = {
-  version: JSON.parse(
-    fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8')
-  ).version,
+  version,
   generatedAt: new Date().toISOString(),
   algorithm: 'sha256',
   files: allChecksums,

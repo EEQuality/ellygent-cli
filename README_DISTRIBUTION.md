@@ -98,7 +98,7 @@ Developer                GitHub                  Users
 | **Installer Script (Unix)** | `curl -fsSL https://ellygent.com/cli/install.sh \| sh` | ❌ |
 | **Installer Script (Windows)** | `irm https://ellygent.com/cli/install.ps1 \| iex` | ❌ |
 | **Direct Download** | Visit https://ellygent.com/cli | ❌ |
-| **npm** | `npm install -g https://github.com/EEQuality/ellygent-cli` | ✅ |
+| **Development installation from GitHub** | `npm install -g https://github.com/EEQuality/ellygent-cli` | Requires Node.js |
 | **GitHub Releases** | Download from release page | ❌ |
 
 ---
@@ -396,7 +396,7 @@ ellygent --version
 - **Website:** https://ellygent.com/cli
 - **GitHub:** https://github.com/EEQuality/ellygent-cli
 - **Releases:** https://github.com/EEQuality/ellygent-cli/releases
-- **npm:** https://www.npmjs.com/package/@ellygent/cli
+- **npm registry installation (future-only):** https://www.npmjs.com/package/@ellygent/cli
 
 ### Support
 - **Issues:** https://github.com/EEQuality/ellygent-cli/issues
@@ -434,11 +434,11 @@ ellygent --version
 | Cross-platform | ✅ | ✅ | ✅ |
 | Checksums | ✅ | ✅ | ✅ |
 | Installer scripts | ✅ | ✅ | ❌ |
-| npm distribution | ✅ | ❌ | ❌ |
+| Contributor npm workflow | ✅ | ❌ | ❌ |
 | Auto-update | 🔄 Future | ✅ | ❌ |
 | Code signing | 🔄 Future | ✅ | ✅ |
 
-**Verdict:** Ellygent CLI distribution is **on par with industry leaders** and includes unique advantages (npm + binaries, installer scripts).
+**Verdict:** Ellygent CLI distribution is **on par with industry leaders** and includes unique advantages (native binaries, installer scripts, and a contributor-only npm workflow).
 
 ---
 

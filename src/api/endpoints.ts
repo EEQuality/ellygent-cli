@@ -1,7 +1,4 @@
 export const endpoints = {
-  auth: {
-    token: "/api/v1/token/"
-  },
   context: {
     orgs: "/api/context/orgs",
     projects: (orgIdentifier: string) => `/api/context/orgs/${encodeURIComponent(orgIdentifier)}/projects`,

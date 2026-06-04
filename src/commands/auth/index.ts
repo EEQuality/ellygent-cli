@@ -7,7 +7,7 @@ import { registerStatusCommand } from "./status.js";
 export function registerAuthCommands(program: Command, context: CommandContext): void {
   const auth = program
     .command("auth")
-    .description("Authenticate with Ellygent and manage credentials");
+    .description("Authenticate with a Personal Access Token and manage credentials");
 
   registerLoginCommand(auth, context);
   registerLogoutCommand(auth, context);

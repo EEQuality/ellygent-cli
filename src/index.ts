@@ -6,6 +6,7 @@ import { registerAuthCommands } from "./commands/auth/index.js";
 import { registerContextCommands } from "./commands/context/index.js";
 import { registerConfigCommands } from "./commands/config/index.js";
 import { registerCompletionCommands } from "./commands/completion.js";
+import { registerWhoAmICommand } from "./commands/whoami.js";
 import { formatCommandCategories } from "./utils/help.js";
 
 // Legacy command imports for backward compatibility
@@ -19,7 +20,7 @@ const program = new Command();
 program
   .name("ellygent")
   .description("Professional CLI for engineering context discovery, requirements sync, and AI-assisted workflows")
-  .version("0.1.0")
+  .version("0.1.1")
   .option("-f, --format <type>", "Output format: json (default) or markdown/md", "json")
   .option("--json", "Output as JSON (shorthand for --format json)")
   .option("-q, --quiet", "Suppress all output except errors")
@@ -31,9 +32,10 @@ ${chalk.bold("COMMANDS")}
 ${chalk.bold("Authentication")}
   ${chalk.dim("Authenticate with Ellygent and manage credentials")}
 
-  ${chalk.cyan("auth login")}       Authenticate with email/password or Personal Access Token
+  ${chalk.cyan("auth login")}       Authenticate with a Personal Access Token
   ${chalk.cyan("auth logout")}      Clear stored credentials
   ${chalk.cyan("auth status")}      Show current authentication status
+  ${chalk.cyan("whoami")}           Show current authentication status
 
 ${chalk.bold("Context & Sync")}
   ${chalk.dim("Discover and download engineering context packages")}
@@ -59,8 +61,11 @@ ${chalk.bold("Shell Completion")}
   ${chalk.cyan("completion generate")} Generate completion script for a specific shell
 
 ${chalk.bold("EXAMPLES")}
-  ${chalk.dim("#")} ${chalk.dim("Authenticate with email and password")}
-  ${chalk.cyan("$")} ellygent auth login
+  ${chalk.dim("#")} ${chalk.dim("Authenticate with a Personal Access Token")}
+  ${chalk.cyan("$")} ellygent login --token elly_pat_xxx
+
+  ${chalk.dim("#")} ${chalk.dim("Check authentication status")}
+  ${chalk.cyan("$")} ellygent whoami
 
   ${chalk.dim("#")} ${chalk.dim("List all accessible organizations")}
   ${chalk.cyan("$")} ellygent context orgs --format markdown
@@ -81,6 +86,7 @@ const context = createCommandContext();
 
 // Register new grouped commands
 registerAuthCommands(program, context);
+registerWhoAmICommand(program, context);
 registerContextCommands(program, context);
 registerConfigCommands(program, context);
 registerCompletionCommands(program);
@@ -113,8 +119,7 @@ function registerLegacyCommandsWithWarnings(program: Command, context: typeof cr
     .command("login", { hidden: true })
     .description("[DEPRECATED] Use 'ellygent auth login' instead")
     .option("--api-url <url>", "Ellygent API URL")
-    .option("--email <email>", "User email")
-    .option("--pat <token>", "Personal Access Token")
+    .option("--token <token>", "Personal Access Token")
     .action(async (...args) => {
       warnDeprecated("login", "auth login");
       // Forward to new command by invoking it programmatically

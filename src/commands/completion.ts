@@ -99,7 +99,7 @@ _ellygent_completion() {
     local cur prev words cword
     _init_completion || return
 
-    local commands="auth context config completion --help --version"
+    local commands="auth context config completion whoami --help --version"
     local auth_commands="login logout status"
     local context_commands="orgs projects versions inspect pull"
     local config_commands="get set list reset"
@@ -148,6 +148,7 @@ _ellygent() {
         'context:Discover and sync context'
         'config:Manage configuration'
         'completion:Manage shell completion'
+        'whoami:Show current authentication status'
         '--help:Show help'
         '--version:Show version'
     )
@@ -213,6 +214,7 @@ complete -c ellygent -f -n "__fish_use_subcommand" -a "auth" -d "Manage authenti
 complete -c ellygent -f -n "__fish_use_subcommand" -a "context" -d "Discover and sync context"
 complete -c ellygent -f -n "__fish_use_subcommand" -a "config" -d "Manage configuration"
 complete -c ellygent -f -n "__fish_use_subcommand" -a "completion" -d "Manage shell completion"
+complete -c ellygent -f -n "__fish_use_subcommand" -a "whoami" -d "Show current authentication status"
 
 # Global flags
 complete -c ellygent -l format -d "Output format" -a "json markdown md"
@@ -282,7 +284,7 @@ Register-ArgumentCompleter -Native -CommandName 'ellygent' -ScriptBlock {
         $commands.Keys | ForEach-Object {
             [CompletionResult]::new($_, $_, 'Command', $_)
         }
-        @('completion', '--help', '--version') | ForEach-Object {
+        @('completion', 'whoami', '--help', '--version') | ForEach-Object {
             [CompletionResult]::new($_, $_, 'ParameterName', $_)
         }
     }

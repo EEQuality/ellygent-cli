@@ -1,18 +1,16 @@
 import { password, input } from "@inquirer/prompts";
-import { AuthApiClient } from "../api/authApiClient.js";
+import { ContextApiClient } from "../api/contextApiClient.js";
 import { ConfigStore, normalizeApiUrl } from "../config/configStore.js";
 
 export interface LoginOptions {
   apiUrl?: string;
-  email?: string;
-  password?: string;
-  pat?: string;
+  token?: string;
 }
 
 export class AuthService {
   constructor(private readonly configStore: ConfigStore) {}
 
-  async login(options: LoginOptions = {}): Promise<{ apiUrl: string; email?: string }> {
+  async login(options: LoginOptions = {}): Promise<{ apiUrl: string }> {
     const current = await this.configStore.load();
     const apiUrl = normalizeApiUrl(
       options.apiUrl ||
@@ -22,50 +20,45 @@ export class AuthService {
         }))
     );
 
-    // Check if PAT is provided (environment variable or option)
-    const patToken = options.pat || process.env.ELLYGENT_PAT;
-    
-    if (patToken) {
-      // PAT authentication - no email/password needed
-      const trimmedPat = patToken.trim();
-      
-      if (!trimmedPat.startsWith('elly_pat_')) {
-        throw new Error('Invalid PAT format. Personal Access Tokens must start with "elly_pat_"');
-      }
-      
-      // Store PAT as the access token (it's already a bearer token)
-      await this.configStore.save({
-        ...current,
-        apiUrl,
-        accessToken: trimmedPat,
-        refreshToken: undefined // PATs don't use refresh tokens
-      });
-      
-      return { apiUrl };
+    const token = await this.resolveToken(options, current);
+    const trimmedToken = token.trim();
+
+    if (!trimmedToken.startsWith("elly_pat_")) {
+      throw new Error('Invalid PAT format. Personal Access Tokens must start with "elly_pat_"');
     }
 
-    // Email/password authentication (existing flow)
-    const email = (options.email ||
-      (await input({
-        message: "Email"
-      }))).trim();
-
-    const userPassword =
-      options.password ||
-      (await password({
-        message: "Password",
-        mask: "*"
-      }));
-
-    const tokenResponse = await new AuthApiClient(apiUrl).login(email, userPassword);
+    // Validate the token before saving anything locally.
+    await new ContextApiClient(apiUrl, trimmedToken).listOrganizations();
 
     await this.configStore.save({
       ...current,
       apiUrl,
-      accessToken: tokenResponse.access,
-      refreshToken: tokenResponse.refresh
+      accessToken: trimmedToken,
+      refreshToken: undefined
     });
 
-    return { apiUrl, email };
+    return { apiUrl };
+  }
+
+  private async resolveToken(options: LoginOptions, current: Awaited<ReturnType<ConfigStore["load"]>>): Promise<string> {
+    const explicitToken = options.token?.trim();
+    if (explicitToken) {
+      return explicitToken;
+    }
+
+    const envToken = process.env.ELLYGENT_TOKEN?.trim();
+    if (envToken) {
+      return envToken;
+    }
+
+    const storedToken = current.accessToken?.trim();
+    if (storedToken) {
+      return storedToken;
+    }
+
+    return password({
+      message: "Personal Access Token",
+      mask: "*"
+    });
   }
 }

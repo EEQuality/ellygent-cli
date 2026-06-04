@@ -1,6 +1,6 @@
 {
   "name": "@ellygent/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Ellygent command line tools for downloading AI-optimized engineering context packages.",
   "type": "module",
   "bin": {
