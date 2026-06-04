@@ -87,6 +87,7 @@ function Invoke-Step {
 
 function Install-EllygentCli {
     $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("ellygent-cli-install-" + [System.Guid]::NewGuid().ToString("N"))
+    $packageArtifact = $null
 
     Write-Host ""
     Write-Info "Installing Ellygent CLI from GitHub checkout with npm"
@@ -121,8 +122,17 @@ function Install-EllygentCli {
         $packageJson = Get-Content (Join-Path $tempRoot 'package.json') -Raw | ConvertFrom-Json
         $packageVersion = $packageJson.version
 
+        Invoke-Step -Description "Packing CLI for installation" -Action {
+            Push-Location $tempRoot
+            try {
+                $script:packageArtifact = ((npm pack) | Select-Object -Last 1).Trim()
+            } finally {
+                Pop-Location
+            }
+        }
+
         Invoke-Step -Description "Installing CLI globally" -Action {
-            npm install -g $tempRoot
+            npm install -g (Join-Path $tempRoot $packageArtifact)
         }
     } finally {
         if (Test-Path $tempRoot) {

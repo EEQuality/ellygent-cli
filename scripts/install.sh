@@ -78,6 +78,7 @@ clone_repo() {
 
 main() {
   TEMP_DIR=$(mktemp -d)
+  PACKAGE_ARTIFACT=""
 
   echo ""
   info "Installing Ellygent CLI from GitHub checkout with npm"
@@ -90,7 +91,9 @@ main() {
   clone_repo
   run_step "Installing CLI dependencies" npm install --prefix "$TEMP_DIR"
   run_step "Building CLI" npm run build --prefix "$TEMP_DIR"
-  run_step "Installing CLI globally" npm install -g "$TEMP_DIR"
+  run_step "Packing CLI for installation" sh -c "cd \"$TEMP_DIR\" && PACKAGE_ARTIFACT=\$(npm pack | tail -n 1) && printf '%s' \"\$PACKAGE_ARTIFACT\" > .ellygent-package-artifact"
+  PACKAGE_ARTIFACT=$(cat "$TEMP_DIR/.ellygent-package-artifact")
+  run_step "Installing CLI globally" npm install -g "$TEMP_DIR/$PACKAGE_ARTIFACT"
 
   if command -v ellygent >/dev/null 2>&1; then
     INSTALLED_VERSION=$(ellygent --version 2>/dev/null || echo "unknown")
