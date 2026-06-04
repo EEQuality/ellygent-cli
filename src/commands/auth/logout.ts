@@ -13,7 +13,7 @@ EXAMPLES
   $ ellygent auth logout
 
 LEARN MORE
-  Use 'ellygent login --token <PAT>' to authenticate again
+  Use 'ellygent auth login --token <PAT>' to authenticate again
 `)
     .action(
       withErrorHandling(async (options, command) => {
@@ -32,7 +32,7 @@ LEARN MORE
         await context.configStore.set("refreshToken", "");
         
         outputSuccess(`Logged out successfully (${authType})`, formatter);
-        outputInfo("Run 'ellygent login --token <PAT>' to re-authenticate", formatter);
+        outputInfo("Run 'ellygent auth login --token <PAT>' to re-authenticate", formatter);
       })
     );
 }

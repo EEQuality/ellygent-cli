@@ -62,7 +62,7 @@ ${chalk.bold("Shell Completion")}
 
 ${chalk.bold("EXAMPLES")}
   ${chalk.dim("#")} ${chalk.dim("Authenticate with a Personal Access Token")}
-  ${chalk.cyan("$")} ellygent login --token elly_pat_xxx
+  ${chalk.cyan("$")} ellygent auth login --token elly_pat_xxx
 
   ${chalk.dim("#")} ${chalk.dim("Check authentication status")}
   ${chalk.cyan("$")} ellygent whoami

@@ -16,7 +16,7 @@ EXAMPLES
   $ ellygent whoami --json
 
 LEARN MORE
-  Use 'ellygent login --token <PAT>' to authenticate
+  Use 'ellygent auth login --token <PAT>' to authenticate
   Use 'ellygent auth logout' to clear credentials
 `)
     .action(withErrorHandling(async (_options, command) => {

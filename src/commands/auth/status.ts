@@ -17,7 +17,7 @@ export async function showAuthStatus(context: CommandContext, command: Command):
       output.info("Not authenticated");
       output.info("Configured: no");
       output.info("Authenticated: no");
-      output.info("Run 'ellygent login --token <PAT>' to authenticate");
+      output.info("Run 'ellygent auth login --token <PAT>' to authenticate");
     }
     return;
   }
@@ -100,7 +100,7 @@ EXAMPLES
   $ ellygent auth status --debug
 
 LEARN MORE
-  Use 'ellygent login --token <PAT>' to authenticate
+  Use 'ellygent auth login --token <PAT>' to authenticate
   Use 'ellygent auth logout' to clear credentials
 `)
     .action(withErrorHandling(async (_options, command) => {

@@ -61,7 +61,7 @@ export class AuthenticationError extends EllygentError {
     super(message, {
       exitCode: 2,
       suggestions: options?.suggestions ?? [
-        "Run 'ellygent login --token <PAT>' to re-authenticate",
+        "Run 'ellygent auth login --token <PAT>' to re-authenticate",
         "Check token with 'ellygent auth status' or 'ellygent whoami'"
       ],
       details: options?.details,

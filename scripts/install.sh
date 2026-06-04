@@ -167,7 +167,7 @@ main() {
     success "Installed version: ${installed_version}"
     echo ""
     info "Get started with:"
-    echo "  ellygent login --token <your-personal-access-token>"
+    echo "  ellygent auth login --token <your-personal-access-token>"
     echo "  ellygent whoami"
     echo "  ellygent --help"
   else

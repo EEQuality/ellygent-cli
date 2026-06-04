@@ -219,7 +219,7 @@ function Install-EllygentCLI {
     
     Write-Host ""
     Write-Info "Get started with:"
-    Write-Host "  ellygent login --token <your-personal-access-token>"
+    Write-Host "  ellygent auth login --token <your-personal-access-token>"
     Write-Host "  ellygent whoami"
     Write-Host "  ellygent --help"
     Write-Host ""

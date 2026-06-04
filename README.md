@@ -28,7 +28,7 @@ After installation, validate with:
 ```powershell
 ellygent --help
 ellygent --version
-ellygent login --token <your-personal-access-token>
+ellygent auth login --token <your-personal-access-token>
 ellygent whoami
 ```
 
@@ -68,7 +68,7 @@ npm link
 ## Login
 
 ```bash
-ellygent login --token <your-personal-access-token>
+ellygent auth login --token <your-personal-access-token>
 ```
 
 The login flow prompts for the API URL if you do not provide `--api-url`, and it only accepts a Personal Access Token:
@@ -81,7 +81,7 @@ The login flow prompts for the API URL if you do not provide `--api-url`, and it
 If you omit `--token`, the CLI prompts for a Personal Access Token and hides your input:
 
 ```bash
-ellygent login
+ellygent auth login
 ```
 
 ### Non-interactive PAT Login
@@ -100,7 +100,7 @@ Set `ELLYGENT_TOKEN` in your environment:
 
 ```bash
 export ELLYGENT_TOKEN='elly_pat_xxxxxxxxxxxxxxxxxxxxx'
-ellygent login --api-url https://api.example.com
+ellygent auth login --api-url https://api.example.com
 ```
 
 **Option 2: Use .env file**
@@ -115,13 +115,13 @@ ELLYGENT_API_URL=https://api.example.com
 Then login:
 
 ```bash
-ellygent login --api-url $ELLYGENT_API_URL
+ellygent auth login --api-url $ELLYGENT_API_URL
 ```
 
 **Option 3: Pass directly as flag**
 
 ```bash
-ellygent login --api-url https://api.example.com --token elly_pat_xxxxxxxxxxxxxxxxxxxxx
+ellygent auth login --api-url https://api.example.com --token elly_pat_xxxxxxxxxxxxxxxxxxxxx
 ```
 
 **Security notes:**
@@ -279,7 +279,7 @@ echo "ELLYGENT_TOKEN=elly_pat_xxxxxxxxxxxxxxxxxxxxx" > .env
 echo "ELLYGENT_API_URL=https://www.ellygent.com/api/" >> .env
 
 # Login once (PAT is stored securely)
-ellygent login --api-url https://www.ellygent.com/api/ --token "$ELLYGENT_TOKEN"
+ellygent auth login --api-url https://www.ellygent.com/api/ --token "$ELLYGENT_TOKEN"
 
 # Set defaults to avoid repeating options
 ellygent config set default-org my-org
@@ -297,7 +297,7 @@ ellygent sync --version v1.0.0
 ```bash
 # Authenticate with PAT from environment
 export ELLYGENT_TOKEN="${SECRET_ELLYGENT_TOKEN}"
-ellygent login --api-url https://www.ellygent.com/api/
+ellygent auth login --api-url https://www.ellygent.com/api/
 
 # Download context for validation or analysis
 ellygent sync \

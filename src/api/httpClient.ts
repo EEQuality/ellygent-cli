@@ -222,7 +222,7 @@ async function buildApiError(response: Response, url: string): Promise<ApiError 
       status === 401 ? "Authentication failed or your token expired" : "Permission denied",
       {
         suggestions: [
-          "Run 'ellygent login --token <PAT>' to re-authenticate",
+          "Run 'ellygent auth login --token <PAT>' to re-authenticate",
           "Check your credentials with 'ellygent whoami'",
           "Verify you have access to this resource"
         ],

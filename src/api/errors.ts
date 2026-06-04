@@ -13,7 +13,7 @@ export class ApiError extends Error {
 export function userMessageForApiError(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.status === 401) {
-      return "Authentication failed or your token expired. Run `ellygent login --token <PAT>` and try again.";
+      return "Authentication failed or your token expired. Run `ellygent auth login --token <PAT>` and try again.";
     }
     if (error.status === 403) {
       return "You do not have permission to access this Ellygent resource.";
