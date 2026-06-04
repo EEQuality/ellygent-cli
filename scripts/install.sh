@@ -1,7 +1,7 @@
 #!/bin/sh
 # Ellygent CLI Installer for Linux/macOS
 #
-# Installs the CLI from a GitHub Release package using npm.
+# Installs the CLI by cloning the GitHub repository and building locally.
 # Usage:
 #   curl -fsSL https://ellygent.com/cli/install.sh | sh
 #   wget -qO- https://ellygent.com/cli/install.sh | sh
@@ -11,18 +11,8 @@
 
 set -e
 
-VERSION="${VERSION:-latest}"
-PACKAGE_URL="https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz"
-
-if [ "$VERSION" != "latest" ]; then
-  NORMALIZED_VERSION="$VERSION"
-  case "$NORMALIZED_VERSION" in
-    v*) ;;
-    *) NORMALIZED_VERSION="v${NORMALIZED_VERSION}" ;;
-  esac
-  PACKAGE_VERSION="${NORMALIZED_VERSION#v}"
-  PACKAGE_URL="https://github.com/EEQuality/ellygent-cli/releases/download/${NORMALIZED_VERSION}/ellygent-cli-${PACKAGE_VERSION}.tgz"
-fi
+VERSION="${VERSION:-main}"
+REPOSITORY_URL="https://github.com/EEQuality/ellygent-cli.git"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -31,19 +21,19 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 info() {
-  printf "${BLUE}ℹ${NC} %s\n" "$1"
+  printf "${BLUE}INFO:${NC} %s\n" "$1"
 }
 
 success() {
-  printf "${GREEN}✓${NC} %s\n" "$1"
+  printf "${GREEN}OK:${NC} %s\n" "$1"
 }
 
 warn() {
-  printf "${YELLOW}⚠${NC} %s\n" "$1"
+  printf "${YELLOW}WARN:${NC} %s\n" "$1"
 }
 
 error() {
-  printf "${RED}✗${NC} %s\n" "$1" >&2
+  printf "${RED}ERROR:${NC} %s\n" "$1" >&2
 }
 
 require_command() {
@@ -54,28 +44,53 @@ require_command() {
   fi
 }
 
-assert_package_url_exists() {
-  if ! curl -fsI -L "$1" >/dev/null 2>&1; then
-    error "GitHub Release package is not available yet."
-    error "Expected package URL: $1"
-    error "Publish a CLI GitHub Release that includes the npm tarball asset before using this installer."
-    exit 1
+run_step() {
+  DESCRIPTION="$1"
+  shift
+  info "$DESCRIPTION"
+  "$@"
+}
+
+normalize_ref() {
+  case "$1" in
+    main) printf '%s' 'main' ;;
+    v*) printf '%s' "$1" ;;
+    *) printf 'v%s' "$1" ;;
+  esac
+}
+
+cleanup() {
+  if [ -n "$TEMP_DIR" ] && [ -d "$TEMP_DIR" ]; then
+    rm -rf "$TEMP_DIR"
+  fi
+}
+
+trap cleanup EXIT
+
+clone_repo() {
+  REF=$(normalize_ref "$VERSION")
+  if [ "$REF" = "main" ]; then
+    run_step "Cloning Ellygent CLI from GitHub (main)" git clone --depth 1 "$REPOSITORY_URL" "$TEMP_DIR"
+  else
+    run_step "Cloning Ellygent CLI from GitHub (${REF})" git clone --depth 1 --branch "$REF" "$REPOSITORY_URL" "$TEMP_DIR"
   fi
 }
 
 main() {
+  TEMP_DIR=$(mktemp -d)
+
   echo ""
-  info "Installing Ellygent CLI from GitHub Release with npm"
+  info "Installing Ellygent CLI from GitHub checkout with npm"
   echo ""
 
   require_command node "Install Node.js 20+ from https://nodejs.org/"
   require_command npm "Install npm by installing Node.js 20+ from https://nodejs.org/"
   require_command git "Install Git from https://git-scm.com/downloads"
-  require_command curl "Install curl or use the PowerShell installer on Windows."
-  assert_package_url_exists "$PACKAGE_URL"
 
-  info "npm package source: ${PACKAGE_URL}"
-  npm install -g "$PACKAGE_URL"
+  clone_repo
+  run_step "Installing CLI dependencies" npm install --prefix "$TEMP_DIR"
+  run_step "Building CLI" npm run build --prefix "$TEMP_DIR"
+  run_step "Installing CLI globally" npm install -g "$TEMP_DIR"
 
   if command -v ellygent >/dev/null 2>&1; then
     INSTALLED_VERSION=$(ellygent --version 2>/dev/null || echo "unknown")

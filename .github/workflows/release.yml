@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   package-and-publish:
-    name: Publish GitHub npm installation assets
+    name: Publish GitHub checkout installation assets
     runs-on: ubuntu-latest
 
     steps:
@@ -33,14 +33,6 @@ jobs:
 
       - name: Build TypeScript
         run: npm run build
-
-      - name: Pack npm tarball for verification
-        run: npm pack
-
-      - name: Prepare latest npm tarball alias
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          cp "ellygent-cli-${VERSION}.tgz" ellygent-cli-latest.tgz
 
       - name: Checkout frontend repository
         uses: actions/checkout@v4
@@ -75,23 +67,31 @@ jobs:
           body: |
             ## Ellygent CLI v${{ steps.extract_version.outputs.version }}
 
-            This release is distributed as a Node.js CLI installed from GitHub Release package assets.
+            This release is distributed directly from GitHub source.
 
-            ### Install latest with npm
+            ### Install latest from GitHub
 
             ```bash
-            npm install -g https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz
+            git clone --depth 1 https://github.com/EEQuality/ellygent-cli.git
+            cd ellygent-cli
+            npm install
+            npm run build
+            npm install -g .
             ```
 
-            ### Install this version with npm
+            ### Install this version from GitHub
 
             ```bash
-            npm install -g https://github.com/EEQuality/ellygent-cli/releases/download/v${{ steps.extract_version.outputs.version }}/ellygent-cli-${{ steps.extract_version.outputs.version }}.tgz
+            git clone --depth 1 --branch v${{ steps.extract_version.outputs.version }} https://github.com/EEQuality/ellygent-cli.git
+            cd ellygent-cli
+            npm install
+            npm run build
+            npm install -g .
             ```
 
             ### Installer scripts
 
-            The frontend-hosted installer scripts now install the same GitHub Release package.
+            The frontend-hosted installer scripts now clone the same GitHub repository, build it locally, and install it globally.
 
             **Windows (PowerShell):**
             ```powershell
@@ -113,19 +113,6 @@ jobs:
             - [Installation Guide](https://ellygent.com/cli)
             - [Getting Started](https://ellygent.com/cli/docs/getting-started)
             - [Full Documentation](https://github.com/EEQuality/ellygent-cli#readme)
-          files: |
-            ellygent-cli-*.tgz
-            ellygent-cli-latest.tgz
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ellygent-cli-v${{ steps.extract_version.outputs.version }}
-          path: |
-            dist/
-            ellygent-cli-*.tgz
-            ellygent-cli-latest.tgz
-          retention-days: 90

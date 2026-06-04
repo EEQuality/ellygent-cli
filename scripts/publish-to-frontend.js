@@ -3,8 +3,8 @@
 /**
  * Publish CLI installer scripts to frontend static directory.
  *
- * Binary distribution was retired in favor of npm installation from
- * GitHub Release package assets.
+ * Binary distribution was retired in favor of direct GitHub checkout
+ * and local build installation.
  */
 
 import * as fs from 'fs';
@@ -99,9 +99,9 @@ const summary = {
     installers: installerScripts.length,
   },
   distribution: {
-    method: 'npm-github-release',
+    method: 'github-checkout',
     repository: 'https://github.com/EEQuality/ellygent-cli',
-    latestPackageUrl: 'https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz',
+    defaultRef: 'main',
   },
 };
 

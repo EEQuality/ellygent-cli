@@ -1,6 +1,6 @@
 # Ellygent CLI Installer for Windows
 #
-# Installs the CLI from a GitHub Release package using npm.
+# Installs the CLI by cloning the GitHub repository and building locally.
 # Usage:
 #   irm https://ellygent.com/cli/install.ps1 | iex
 #
@@ -8,41 +8,36 @@
 #   $env:VERSION = "v0.1.1"; irm https://ellygent.com/cli/install.ps1 | iex
 
 param(
-    [string]$Version = "latest"
+    [string]$Version = "main"
 )
 
 if ($env:VERSION) {
     $Version = $env:VERSION
 }
 
-$PackageUrl = "https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz"
-if ($Version -and $Version -ne "latest") {
-    $normalizedVersion = if ($Version.StartsWith("v")) { $Version } else { "v$Version" }
-    $packageVersion = $normalizedVersion.TrimStart("v")
-    $PackageUrl = "https://github.com/EEQuality/ellygent-cli/releases/download/$normalizedVersion/ellygent-cli-$packageVersion.tgz"
-}
+$RepositoryUrl = "https://github.com/EEQuality/ellygent-cli.git"
 
 function Write-Info {
     param([string]$Message)
-    Write-Host "ℹ " -ForegroundColor Blue -NoNewline
+    Write-Host "INFO: " -ForegroundColor Blue -NoNewline
     Write-Host $Message
 }
 
 function Write-Success {
     param([string]$Message)
-    Write-Host "✓ " -ForegroundColor Green -NoNewline
+    Write-Host "OK: " -ForegroundColor Green -NoNewline
     Write-Host $Message
 }
 
 function Write-Warn {
     param([string]$Message)
-    Write-Host "⚠ " -ForegroundColor Yellow -NoNewline
+    Write-Host "WARN: " -ForegroundColor Yellow -NoNewline
     Write-Host $Message
 }
 
 function Write-Fail {
     param([string]$Message)
-    Write-Host "✗ " -ForegroundColor Red -NoNewline
+    Write-Host "ERROR: " -ForegroundColor Red -NoNewline
     Write-Host $Message
 }
 
@@ -76,37 +71,63 @@ function Add-NpmBinToPathIfNeeded {
     }
 }
 
-function Assert-PackageUrlExists {
-    param([string]$Url)
+function Invoke-Step {
+    param(
+        [string]$Description,
+        [scriptblock]$Action
+    )
 
-    try {
-        $response = Invoke-WebRequest -Uri $Url -Method Head -MaximumRedirection 5 -ErrorAction Stop
-        if ($response.StatusCode -ge 400) {
-            throw "Unexpected status code: $($response.StatusCode)"
-        }
-    } catch {
-        Write-Fail "GitHub Release package is not available yet."
-        Write-Host "  Expected package URL: $Url"
-        Write-Host "  Publish a CLI GitHub Release that includes the npm tarball asset before using this installer."
-        exit 1
+    Write-Info $Description
+    & $Action
+    if ($LASTEXITCODE -ne 0) {
+        Write-Fail "$Description failed"
+        exit $LASTEXITCODE
     }
 }
 
 function Install-EllygentCli {
+    $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("ellygent-cli-install-" + [System.Guid]::NewGuid().ToString("N"))
+
     Write-Host ""
-    Write-Info "Installing Ellygent CLI from GitHub Release with npm"
+    Write-Info "Installing Ellygent CLI from GitHub checkout with npm"
     Write-Host ""
 
     Assert-Command -Name "node" -InstallHint "Install Node.js 20+ from https://nodejs.org/"
     Assert-Command -Name "npm" -InstallHint "Install npm by installing Node.js 20+ from https://nodejs.org/"
     Assert-Command -Name "git" -InstallHint "Install Git from https://git-scm.com/download/win"
-    Assert-PackageUrlExists -Url $PackageUrl
 
-    Write-Info "npm package source: $PackageUrl"
-    & npm install -g $PackageUrl
-    if ($LASTEXITCODE -ne 0) {
-        Write-Fail "npm installation failed"
-        exit $LASTEXITCODE
+    $packageVersion = $null
+
+    try {
+        if ($Version -and $Version -ne "main") {
+            $normalizedVersion = if ($Version.StartsWith("v")) { $Version } else { "v$Version" }
+            Invoke-Step -Description "Cloning Ellygent CLI from GitHub ($normalizedVersion)" -Action {
+                git clone --depth 1 --branch $normalizedVersion $RepositoryUrl $tempRoot
+            }
+        } else {
+            Invoke-Step -Description "Cloning Ellygent CLI from GitHub (main)" -Action {
+                git clone --depth 1 $RepositoryUrl $tempRoot
+            }
+        }
+
+        Invoke-Step -Description "Installing CLI dependencies" -Action {
+            npm install --prefix $tempRoot
+        }
+
+        Invoke-Step -Description "Building CLI" -Action {
+            npm run build --prefix $tempRoot
+        }
+
+        $packageJson = Get-Content (Join-Path $tempRoot 'package.json') -Raw | ConvertFrom-Json
+        $packageVersion = $packageJson.version
+
+        Invoke-Step -Description "Installing CLI globally" -Action {
+            npm install -g $tempRoot
+        }
+    } finally {
+        if (Test-Path $tempRoot) {
+            Remove-Item $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 
     Add-NpmBinToPathIfNeeded
@@ -118,7 +139,7 @@ function Install-EllygentCli {
         return
     }
 
-    $installedVersion = & $ellygent.Source --version 2>$null
+    $installedVersion = if ($packageVersion) { $packageVersion } else { "unknown" }
     Write-Success "Installed version: $installedVersion"
     Write-Host ""
     Write-Info "Get started with:"

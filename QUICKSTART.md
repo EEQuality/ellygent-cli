@@ -30,9 +30,8 @@ git push origin v0.1.1
 4. Monitor the release workflow.
 
 - It builds the CLI.
-- It packs the npm tarball for verification.
 - It republishes the hosted installer scripts.
-- It creates a GitHub Release with the GitHub npm install command.
+- It creates a GitHub Release with GitHub checkout installation instructions.
 
 ## For Developers
 
@@ -61,8 +60,12 @@ ls -la public/cli/
 ### Test installation flows
 
 ```bash
-# Direct install from GitHub
-npm install -g https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz
+# Direct install from GitHub source
+git clone --depth 1 https://github.com/EEQuality/ellygent-cli.git
+cd ellygent-cli
+npm install
+npm run build
+npm install -g .
 
 # Hosted installer wrappers
 curl -fsSL https://ellygent.com/cli/install.sh | sh
@@ -81,16 +84,19 @@ Triggers:
 
 Key outputs:
 - Built `dist/` JavaScript bundle
-- Packed npm tarball
 - Updated frontend `public/cli/` installer scripts
-- GitHub Release notes pointing to GitHub Release npm installation
+- GitHub Release notes pointing to GitHub checkout installation
 
 ## For End Users
 
 ### Install the CLI
 
 ```bash
-npm install -g https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz
+git clone --depth 1 https://github.com/EEQuality/ellygent-cli.git
+cd ellygent-cli
+npm install
+npm run build
+npm install -g .
 ```
 
 Optional wrappers:
@@ -124,12 +130,16 @@ Windows (PowerShell):
 irm https://ellygent.com/cli/install.ps1 | iex
 ```
 
-**Install directly from GitHub with npm:**
+**Install directly from GitHub:**
 ```bash
-npm install -g https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz
+git clone --depth 1 https://github.com/EEQuality/ellygent-cli.git
+cd ellygent-cli
+npm install
+npm run build
+npm install -g .
 ```
 
-This GitHub-based workflow is the official distribution path. It installs the packaged release artifact directly from GitHub and does not rely on the public npm registry.
+This GitHub-based workflow is the official distribution path. It installs directly from checked-out GitHub source and does not rely on the public npm registry.
 
 ### Verification
 
@@ -168,7 +178,7 @@ ellygent --help
 | Create release | Tag and push: `git tag v0.1.1 && git push origin v0.1.1` |
 | Install (Unix) | `curl -fsSL https://ellygent.com/cli/install.sh \| sh` |
 | Install (Windows) | `irm https://ellygent.com/cli/install.ps1 \| iex` |
-| Install (npm) | `npm install -g https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz` |
+| Install (GitHub) | `git clone --depth 1 https://github.com/EEQuality/ellygent-cli.git && cd ellygent-cli && npm install && npm run build && npm install -g .` |
 | Verify install | `ellygent --version` |
 | View install docs | https://ellygent.com/cli |
 | View releases | https://github.com/EEQuality/ellygent-cli/releases |
@@ -176,4 +186,4 @@ ellygent --help
 ---
 
 **Last Updated:** 2026-06-04  
-**Pipeline Version:** GitHub npm only
+**Pipeline Version:** GitHub checkout only

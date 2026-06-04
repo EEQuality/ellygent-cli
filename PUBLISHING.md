@@ -4,11 +4,11 @@ This document describes the release and distribution process for the Ellygent CL
 
 ## Release Model
 
-The CLI is distributed as a Node.js package installed from GitHub Release assets.
+The CLI is distributed directly from GitHub source.
 
-- Official install: `npm install -g https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz`
-- Versioned install: `npm install -g https://github.com/EEQuality/ellygent-cli/releases/download/v0.1.1/ellygent-cli-0.1.1.tgz`
-- Frontend-hosted installer scripts remain available, but they only wrap the GitHub Release npm install flow.
+- Official install: hosted installer scripts that clone the GitHub repo, build locally, and install globally.
+- Manual install: clone the GitHub repo, run `npm install`, `npm run build`, and `npm install -g .`.
+- Version-pinned install: clone with `--branch vX.Y.Z` before building.
 
 ## Distribution Architecture
 
@@ -59,13 +59,12 @@ Releases are automated via GitHub Actions.
 
 5. **GitHub Actions automatically:**
    - Builds TypeScript to JavaScript
-   - Packs the npm tarball for verification
    - Publishes installer scripts to the frontend public directory
-   - Creates GitHub Release notes with the GitHub Release npm install command
+   - Creates GitHub Release notes with GitHub checkout installation instructions
 
 ### Manual Build (Local Testing)
 
-Build the distributable npm package locally:
+Build the CLI locally:
 
 ```bash
 # Release build
@@ -73,19 +72,17 @@ npm run build:release
 
 # Individual steps
 npm run build              # TypeScript → JavaScript
-npm pack                   # Verify published package contents
 
 # Publish installer scripts to frontend (requires ../ellygent-frontend)
 npm run publish:frontend
 ```
 
-### Verify Release Artifacts
+### Verify Build Output
 
 After build, verify:
 
 ```bash
 ls -lh dist/
-npm pack --dry-run
 ```
 
 ## npm Publishing
@@ -184,21 +181,22 @@ Before publishing a new version:
    - Go to GitHub releases page
    - Create new release from tag
    - Copy CHANGELOG.md content for release notes
-   - Attach tarball if needed
+   - Reference the hosted installer scripts or manual GitHub checkout steps
 
 ## Installing During Development
 
-Install from GitHub Release assets:
+Install from GitHub source:
 
 ```powershell
-# Install globally
-npm install -g https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz
+# Clone main
+git clone --depth 1 https://github.com/EEQuality/ellygent-cli.git
+cd ellygent-cli
+npm install
+npm run build
+npm install -g .
 
-# Install as dev dependency
-npm install --save-dev https://github.com/EEQuality/ellygent-cli/releases/latest/download/ellygent-cli-latest.tgz
-
-# Install from specific version
-npm install -g https://github.com/EEQuality/ellygent-cli/releases/download/v0.1.0/ellygent-cli-0.1.0.tgz
+# Clone a specific version
+git clone --depth 1 --branch v0.1.0 https://github.com/EEQuality/ellygent-cli.git
 ```
 
 ## Unpublishing (Emergency Only)
