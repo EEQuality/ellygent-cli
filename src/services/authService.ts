@@ -19,7 +19,7 @@ export class AuthService {
     const apiUrl = normalizeApiUrl(
       options.apiUrl ||
         (await input({
-          message: "Ellygent server URL\nEnter the Ellygent server URL, for example https://www.ellygent.com. Do not include /api; the CLI adds it automatically.",
+          message: "Ellygent server URL\nEnter the Ellygent server URL, for example https://www.ellygent.com. ",
           default: defaultServerUrl
         }))
     );
