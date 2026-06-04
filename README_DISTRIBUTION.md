@@ -98,7 +98,7 @@ Developer                GitHub                  Users
 | **Installer Script (Unix)** | `curl -fsSL https://ellygent.com/cli/install.sh \| sh` | ❌ |
 | **Installer Script (Windows)** | `irm https://ellygent.com/cli/install.ps1 \| iex` | ❌ |
 | **Direct Download** | Visit https://ellygent.com/cli | ❌ |
-| **npm** | `npm install -g @ellygent/cli` | ✅ |
+| **npm** | `npm install -g https://github.com/EEQuality/ellygent-cli` | ✅ |
 | **GitHub Releases** | Download from release page | ❌ |
 
 ---

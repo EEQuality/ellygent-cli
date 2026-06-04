@@ -101,7 +101,7 @@ Features:
 Traditional npm distribution for Node.js environments.
 
 ```bash
-npm install -g @ellygent/cli
+npm install -g https://github.com/EEQuality/ellygent-cli
 ```
 
 **Registry:** npmjs.com  
@@ -259,7 +259,7 @@ ellygent-frontend/public/
   "npm": {
     "package": "@ellygent/cli",
     "version": "0.1.0",
-    "install": "npm install -g @ellygent/cli"
+    "install": "npm install -g https://github.com/EEQuality/ellygent-cli"
   },
   "checksumAlgorithm": "sha256"
 }
@@ -299,7 +299,7 @@ ellygent-frontend/public/
 
 4. **npm Installation**
    ```bash
-   npm install -g @ellygent/cli
+   npm install -g https://github.com/EEQuality/ellygent-cli
    ```
 
 ### For CI/CD

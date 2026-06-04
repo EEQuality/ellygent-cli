@@ -230,7 +230,7 @@ irm https://ellygent.com/cli/install.ps1 | iex
 
 **Alternative (npm):**
 ```bash
-npm install -g @ellygent/cli
+npm install -g https://github.com/EEQuality/ellygent-cli
 ```
 
 **Manual:**
@@ -288,7 +288,7 @@ ellygent --help
 | Create release | Tag and push: `git tag v0.1.1 && git push origin v0.1.1` |
 | Install (Unix) | `curl -fsSL https://ellygent.com/cli/install.sh \| sh` |
 | Install (Windows) | `irm https://ellygent.com/cli/install.ps1 \| iex` |
-| Install (npm) | `npm install -g @ellygent/cli` |
+| Install (npm) | `npm install -g https://github.com/EEQuality/ellygent-cli` |
 | Test binary | `./dist/bin/ellygent-* --version` |
 | Verify checksum | `sha256sum -c checksums.txt` |
 | View downloads | https://ellygent.com/cli |

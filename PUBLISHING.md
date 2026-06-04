@@ -222,13 +222,13 @@ Users can install via npm:
 
 ```powershell
 # Install globally
-npm install -g @ellygent/cli
+npm install -g https://github.com/EEQuality/ellygent-cli
 
 # Install as dev dependency
 npm install --save-dev @ellygent/cli
 
 # Install from specific version
-npm install -g @ellygent/cli@0.1.0
+npm install -g https://github.com/EEQuality/ellygent-cli@0.1.0
 ```
 
 ## Unpublishing (Emergency Only)

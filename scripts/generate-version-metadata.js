@@ -67,7 +67,7 @@ const metadata = {
   npm: {
     package: '@ellygent/cli',
     version,
-    install: 'npm install -g @ellygent/cli',
+    install: 'npm install -g https://github.com/EEQuality/ellygent-cli',
   },
   checksumAlgorithm: 'sha256',
 };

@@ -30,7 +30,7 @@ Extract and move the binary to a directory in your PATH.
 ### Install via npm
 
 ```bash
-npm install -g @ellygent/cli
+npm install -g https://github.com/EEQuality/ellygent-cli
 ```
 
 ### Build from Source
@@ -220,7 +220,7 @@ Environment variables can override file-based configuration. This is useful for 
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `ELLYGENT_API_URL` | API base URL | `https://api.ellygent.com` |
+| `ELLYGENT_API_URL` | API base URL | `https://www.ellygent.com/api/` |
 | `ELLYGENT_TOKEN` | Access token (PAT or JWT) | `elly_pat_xxxxx` |
 | `ELLYGENT_ORG` | Default organization | `my-org` |
 | `ELLYGENT_PROJECT` | Default project | `my-project` |
@@ -266,10 +266,10 @@ ellygent config list
 ```bash
 # One-time setup: create .env file
 echo "ELLYGENT_PAT=elly_pat_xxxxxxxxxxxxxxxxxxxxx" > .env
-echo "ELLYGENT_API_URL=https://api.ellygent.com" >> .env
+echo "ELLYGENT_API_URL=https://www.ellygent.com/api/" >> .env
 
 # Login once (PAT is stored securely)
-ellygent login --api-url https://api.ellygent.com
+ellygent login --api-url https://www.ellygent.com/api/
 
 # Set defaults to avoid repeating options
 ellygent config set default-org my-org
@@ -287,7 +287,7 @@ ellygent sync --version v1.0.0
 ```bash
 # Authenticate with PAT from environment
 export ELLYGENT_PAT="${SECRET_ELLYGENT_PAT}"
-ellygent login --api-url https://api.ellygent.com
+ellygent login --api-url https://www.ellygent.com/api/
 
 # Download context for validation or analysis
 ellygent sync \

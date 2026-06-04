@@ -158,7 +158,7 @@ jobs:
             
             **npm:**
             ```bash
-            npm install -g @ellygent/cli
+            npm install -g https://github.com/EEQuality/ellygent-cli
             ```
             
             ### Checksums
