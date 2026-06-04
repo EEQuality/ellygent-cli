@@ -93,6 +93,8 @@ main() {
   run_step "Building CLI" npm run build --prefix "$TEMP_DIR"
   run_step "Packing CLI for installation" sh -c "cd \"$TEMP_DIR\" && PACKAGE_ARTIFACT=\$(npm pack | tail -n 1) && printf '%s' \"\$PACKAGE_ARTIFACT\" > .ellygent-package-artifact"
   PACKAGE_ARTIFACT=$(cat "$TEMP_DIR/.ellygent-package-artifact")
+  info "Removing any existing global Ellygent CLI installation"
+  npm uninstall -g @ellygent/cli >/dev/null 2>&1 || true
   run_step "Installing CLI globally" npm install -g "$TEMP_DIR/$PACKAGE_ARTIFACT"
 
   if command -v ellygent >/dev/null 2>&1; then

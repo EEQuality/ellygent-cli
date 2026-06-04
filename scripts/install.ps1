@@ -131,6 +131,9 @@ function Install-EllygentCli {
             }
         }
 
+        Write-Info "Removing any existing global Ellygent CLI installation"
+        & npm uninstall -g @ellygent/cli 2>$null | Out-Null
+
         Invoke-Step -Description "Installing CLI globally" -Action {
             npm install -g (Join-Path $tempRoot $packageArtifact)
         }
