@@ -63,6 +63,10 @@ cleanup() {
   if [ -n "$TEMP_DIR" ] && [ -d "$TEMP_DIR" ]; then
     rm -rf "$TEMP_DIR"
   fi
+
+  if [ -n "$STAGED_PACKAGE_ARTIFACT" ] && [ -f "$STAGED_PACKAGE_ARTIFACT" ]; then
+    rm -f "$STAGED_PACKAGE_ARTIFACT"
+  fi
 }
 
 trap cleanup EXIT
@@ -79,6 +83,7 @@ clone_repo() {
 main() {
   TEMP_DIR=$(mktemp -d)
   PACKAGE_ARTIFACT=""
+  STAGED_PACKAGE_ARTIFACT=$(mktemp -u "${TMPDIR:-/tmp}/ellygent-cli-install-package-XXXXXX.tgz")
 
   echo ""
   info "Installing Ellygent CLI from GitHub checkout with npm"
@@ -93,9 +98,10 @@ main() {
   run_step "Building CLI" npm run build --prefix "$TEMP_DIR"
   run_step "Packing CLI for installation" sh -c "cd \"$TEMP_DIR\" && PACKAGE_ARTIFACT=\$(npm pack | tail -n 1) && printf '%s' \"\$PACKAGE_ARTIFACT\" > .ellygent-package-artifact"
   PACKAGE_ARTIFACT=$(cat "$TEMP_DIR/.ellygent-package-artifact")
+  cp "$TEMP_DIR/$PACKAGE_ARTIFACT" "$STAGED_PACKAGE_ARTIFACT"
   info "Removing any existing global Ellygent CLI installation"
   npm uninstall -g @ellygent/cli >/dev/null 2>&1 || true
-  run_step "Installing CLI globally" npm install -g "$TEMP_DIR/$PACKAGE_ARTIFACT"
+  run_step "Installing CLI globally" npm install -g "$STAGED_PACKAGE_ARTIFACT"
 
   if command -v ellygent >/dev/null 2>&1; then
     INSTALLED_VERSION=$(ellygent --version 2>/dev/null || echo "unknown")
