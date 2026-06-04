@@ -17,31 +17,19 @@ curl -fsSL https://ellygent.com/cli/install.sh | sh
 ```
 
 The official installer:
-- Detects your platform and architecture.
-- Downloads the latest native CLI binary.
-- Verifies the checksum before installing.
-- Installs into `%LOCALAPPDATA%\Ellygent\bin` on Windows or a standard PATH directory on Unix-like systems.
-- Adds the install directory to your User PATH and prints the installed version.
+- Detects whether Node.js and npm are installed.
+- Installs the CLI from the GitHub repository with npm.
+- Verifies the installed CLI command and helps repair PATH issues if needed.
+- Prints the installed version and next authentication steps.
 
 After installation, validate with:
 
 ```powershell
 ellygent --help
 ellygent --version
-ellygent auth login --token <your-personal-access-token>
+ellygent login --token <your-personal-access-token>
 ellygent whoami
 ```
-
-### Download Standalone Binary
-
-Download pre-built binaries from [ellygent.com/cli](https://ellygent.com/cli) or [GitHub Releases](https://github.com/EEQuality/ellygent-cli/releases):
-
-- **Windows (x64)**: `ellygent-win-x64.exe`
-- **Linux (x64)**: `ellygent-linux-x64`
-- **macOS Intel (x64)**: `ellygent-macos-x64`
-- **macOS Apple Silicon (ARM64)**: `ellygent-macos-arm64`
-
-Extract and move the binary to a directory in your PATH.
 
 ### Development installation from GitHub
 
@@ -68,10 +56,10 @@ npm link
 ## Login
 
 ```bash
-ellygent auth login --token <your-personal-access-token>
+ellygent login --token <your-personal-access-token>
 ```
 
-The login flow prompts for the API URL if you do not provide `--api-url`, and it only accepts a Personal Access Token:
+The login flow prompts for the Ellygent server URL if you do not provide `--url`, and it only accepts a Personal Access Token. You should enter the server root such as `https://www.ellygent.com`; the CLI adds `/api` automatically:
 
 - Linux/macOS: `~/.ellygent/config.json` or `$XDG_CONFIG_HOME/ellygent/config.json`
 - Windows: `%APPDATA%\Ellygent\config.json`
@@ -81,7 +69,7 @@ The login flow prompts for the API URL if you do not provide `--api-url`, and it
 If you omit `--token`, the CLI prompts for a Personal Access Token and hides your input:
 
 ```bash
-ellygent auth login
+ellygent login
 ```
 
 ### Non-interactive PAT Login
@@ -100,7 +88,7 @@ Set `ELLYGENT_TOKEN` in your environment:
 
 ```bash
 export ELLYGENT_TOKEN='elly_pat_xxxxxxxxxxxxxxxxxxxxx'
-ellygent auth login --api-url https://api.example.com
+ellygent login --url https://www.ellygent.com
 ```
 
 **Option 2: Use .env file**
@@ -109,19 +97,19 @@ Create a `.env` file in your project directory:
 
 ```bash
 ELLYGENT_TOKEN=elly_pat_xxxxxxxxxxxxxxxxxxxxx
-ELLYGENT_API_URL=https://api.example.com
+ELLYGENT_API_URL=https://www.ellygent.com
 ```
 
 Then login:
 
 ```bash
-ellygent auth login --api-url $ELLYGENT_API_URL
+ellygent login --url "$ELLYGENT_API_URL"
 ```
 
 **Option 3: Pass directly as flag**
 
 ```bash
-ellygent auth login --api-url https://api.example.com --token elly_pat_xxxxxxxxxxxxxxxxxxxxx
+ellygent login --url https://www.ellygent.com --token elly_pat_xxxxxxxxxxxxxxxxxxxxx
 ```
 
 **Security notes:**
@@ -212,13 +200,13 @@ View or update stored configuration:
 ellygent config
 
 # Set configuration values
-ellygent config set api-url https://api.example.com
+ellygent config set api-url https://www.ellygent.com
 ellygent config set default-org john-doe
 ellygent config set default-project tractor_control
 ```
 
 **Config keys:**
-- `api-url` — Ellygent API base URL
+- `api-url` — Ellygent server URL normalized to the CLI API base
 - `default-org` — Default organization for commands
 - `default-project` — Default project for commands
 - `access-token` — Manually set access token (advanced)
@@ -232,7 +220,7 @@ Environment variables can override file-based configuration. This is useful for 
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `ELLYGENT_API_URL` | API base URL | `https://www.ellygent.com/api/` |
+| `ELLYGENT_API_URL` | Ellygent server URL | `https://www.ellygent.com` |
 | `ELLYGENT_TOKEN` | Personal Access Token | `elly_pat_xxxxx` |
 | `ELLYGENT_ORG` | Default organization | `my-org` |
 | `ELLYGENT_PROJECT` | Default project | `my-project` |
@@ -276,10 +264,10 @@ ellygent config list
 ```bash
 # One-time setup: create .env file
 echo "ELLYGENT_TOKEN=elly_pat_xxxxxxxxxxxxxxxxxxxxx" > .env
-echo "ELLYGENT_API_URL=https://www.ellygent.com/api/" >> .env
+echo "ELLYGENT_API_URL=https://www.ellygent.com" >> .env
 
 # Login once (PAT is stored securely)
-ellygent auth login --api-url https://www.ellygent.com/api/ --token "$ELLYGENT_TOKEN"
+ellygent login --url https://www.ellygent.com --token "$ELLYGENT_TOKEN"
 
 # Set defaults to avoid repeating options
 ellygent config set default-org my-org
@@ -297,7 +285,7 @@ ellygent sync --version v1.0.0
 ```bash
 # Authenticate with PAT from environment
 export ELLYGENT_TOKEN="${SECRET_ELLYGENT_TOKEN}"
-ellygent auth login --api-url https://www.ellygent.com/api/
+ellygent login --url https://www.ellygent.com
 
 # Download context for validation or analysis
 ellygent sync \

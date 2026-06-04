@@ -38,11 +38,11 @@ export async function showAuthStatus(context: CommandContext, command: Command):
     if (output.isJson()) {
       output.data(statusData);
     } else {
-      output.warn("API URL is not configured");
+      output.warn("Server URL is not configured");
       output.info("Configured: no");
       output.info("Authenticated: no");
       output.info(`Token type: ${statusData.tokenType}`);
-      output.info(`API URL: ${statusData.apiUrl}`);
+      output.info(`API base URL: ${statusData.apiUrl}`);
     }
 
     output.complete();
@@ -71,7 +71,7 @@ export async function showAuthStatus(context: CommandContext, command: Command):
     output.success("Authenticated");
     output.info("Configured: yes");
     output.info("Authenticated: yes");
-    output.info(`API URL: ${statusData.apiUrl}`);
+    output.info(`API base URL: ${statusData.apiUrl}`);
     output.info(`Token type: ${statusData.tokenType}`);
     if (config.defaultOrg) {
       output.info(`Default organization: ${config.defaultOrg}`);

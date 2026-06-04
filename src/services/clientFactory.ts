@@ -7,7 +7,7 @@ export class ClientFactory {
   async contextClient(): Promise<ContextApiClient> {
     const config = await this.configStore.load();
     if (!config.apiUrl) {
-      throw new Error("No Ellygent API URL configured. Run `ellygent auth login` or `ellygent config set api-url <url>`.");
+      throw new Error("No Ellygent server URL configured. Run `ellygent login --token <PAT>` or `ellygent config set api-url <url>`.");
     }
     if (!config.accessToken) {
       throw new Error("No Ellygent access token configured. Run `ellygent auth login --token <PAT>`.");

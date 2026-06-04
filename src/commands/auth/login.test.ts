@@ -15,6 +15,7 @@ describe("auth login command", () => {
 
     const help = login?.helpInformation() || "";
     expect(help).toContain("--token");
+    expect(help).toContain("--url");
     expect(help).not.toContain("password");
     expect(help).not.toContain("email/password");
     expect(help).not.toContain("ELLYGENT_PASSWORD");

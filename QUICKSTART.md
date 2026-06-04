@@ -46,9 +46,9 @@ git push origin v0.1.1
 - Check GitHub Actions: https://github.com/EEQuality/ellygent-cli/actions
 - Verify GitHub Release created
 - Verify frontend repo updated
-- Test download from https://ellygent.com/cli
+- Test install from https://ellygent.com/cli
 
-**Done!** Users can now download v0.1.1
+**Done!** Users can now install v0.1.1
 
 ---
 
@@ -235,13 +235,6 @@ npm install -g https://github.com/EEQuality/ellygent-cli
 
 This GitHub-based workflow is for contributors and local development. It installs directly from the repository and does not rely on the public npm registry.
 
-**Manual:**
-1. Visit https://ellygent.com/cli
-2. Download binary for your platform
-3. Extract (if archived)
-4. Move to PATH directory
-5. Make executable (Unix): `chmod +x ellygent`
-
 ### Verification
 
 **Check version:**
@@ -249,25 +242,11 @@ This GitHub-based workflow is for contributors and local development. It install
 ellygent --version
 ```
 
-**Verify checksum:**
-
-Linux/macOS:
-```bash
-wget https://ellygent.com/downloads/cli/latest/checksums.txt
-sha256sum ellygent-linux-x64  # or your binary
-```
-
-Windows:
-```powershell
-$hash = (Get-FileHash .\ellygent-win-x64.exe).Hash
-# Compare with https://ellygent.com/downloads/cli/latest/checksums.txt
-```
-
 ### Usage
 
 ```bash
 # Login
-ellygent auth login --token <your-personal-access-token>
+ellygent login --token <your-personal-access-token>
 
 # Check authentication status
 ellygent whoami
@@ -295,8 +274,8 @@ ellygent --help
 | Install (Windows) | `irm https://ellygent.com/cli/install.ps1 \| iex` |
 | Install (dev) | `npm install -g https://github.com/EEQuality/ellygent-cli` |
 | Test binary | `./dist/bin/ellygent-* --version` |
-| Verify checksum | `sha256sum -c checksums.txt` |
-| View downloads | https://ellygent.com/cli |
+| Verify install | `ellygent --version` |
+| View install docs | https://ellygent.com/cli |
 | View releases | https://github.com/EEQuality/ellygent-cli/releases |
 
 ---

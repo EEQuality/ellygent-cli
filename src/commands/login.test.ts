@@ -13,6 +13,7 @@ describe("root login command", () => {
     const login = program.commands.find((command) => command.name() === "login");
     expect(login).toBeDefined();
     expect(login?.options.map((option) => option.long)).toContain("--token");
+    expect(login?.options.map((option) => option.long)).toContain("--url");
     expect(login?.options.map((option) => option.long)).not.toContain("--email");
     expect(login?.options.map((option) => option.long)).not.toContain("--pat");
   });

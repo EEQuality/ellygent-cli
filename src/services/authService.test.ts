@@ -36,7 +36,7 @@ describe("AuthService", () => {
 
   it("logs in with an explicit token and validates it before saving", async () => {
     process.env.ELLYGENT_TOKEN = "elly_pat_env_ignored";
-    const configStore = createConfigStore({ apiUrl: "https://api.example.com" });
+    const configStore = createConfigStore({ apiUrl: "https://api.example.com/api" });
     const service = new AuthService(configStore as any);
 
     await service.login({
@@ -47,7 +47,7 @@ describe("AuthService", () => {
     expect(mocks.listOrganizations).toHaveBeenCalledTimes(1);
     expect(configStore.save).toHaveBeenCalledWith(
       expect.objectContaining({
-        apiUrl: "https://api.example.com",
+        apiUrl: "https://api.example.com/api",
         accessToken: "elly_pat_explicit_123",
         refreshToken: undefined,
       }),
@@ -57,7 +57,7 @@ describe("AuthService", () => {
 
   it("uses ELLYGENT_TOKEN when no explicit token is provided", async () => {
     process.env.ELLYGENT_TOKEN = "elly_pat_env_123";
-    const configStore = createConfigStore({ apiUrl: "https://api.example.com" });
+    const configStore = createConfigStore({ apiUrl: "https://api.example.com/api" });
     const service = new AuthService(configStore as any);
 
     await service.login({
@@ -74,7 +74,7 @@ describe("AuthService", () => {
 
   it("falls back to the stored token when no token is provided", async () => {
     const configStore = createConfigStore({
-      apiUrl: "https://api.example.com",
+      apiUrl: "https://api.example.com/api",
       accessToken: "elly_pat_stored_123",
     });
     const service = new AuthService(configStore as any);
@@ -91,7 +91,7 @@ describe("AuthService", () => {
   });
 
   it("prompts only for a PAT when no token source exists", async () => {
-    mocks.input.mockResolvedValue("https://api.example.com");
+    mocks.input.mockResolvedValue("https://www.ellygent.com");
     mocks.password.mockResolvedValue("elly_pat_prompt_123");
     const configStore = createConfigStore({});
     const service = new AuthService(configStore as any);
@@ -99,7 +99,10 @@ describe("AuthService", () => {
     await service.login({});
 
     expect(mocks.input).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "Ellygent API URL" }),
+      expect.objectContaining({
+        message: expect.stringContaining("Ellygent server URL"),
+        default: "https://www.ellygent.com"
+      }),
     );
     expect(mocks.password).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Personal Access Token" }),
@@ -107,12 +110,13 @@ describe("AuthService", () => {
     expect(configStore.save).toHaveBeenCalledWith(
       expect.objectContaining({
         accessToken: "elly_pat_prompt_123",
+        apiUrl: "https://www.ellygent.com/api"
       }),
     );
   });
 
   it("rejects non-PAT tokens before contacting the API", async () => {
-    const configStore = createConfigStore({ apiUrl: "https://api.example.com" });
+    const configStore = createConfigStore({ apiUrl: "https://api.example.com/api" });
     const service = new AuthService(configStore as any);
 
     await expect(
@@ -124,5 +128,20 @@ describe("AuthService", () => {
 
     expect(mocks.listOrganizations).not.toHaveBeenCalled();
     expect(configStore.save).not.toHaveBeenCalled();
+  });
+
+  it("shows the stored server URL without /api in the prompt default", async () => {
+    mocks.input.mockResolvedValue("https://www.ellygent.com");
+    mocks.password.mockResolvedValue("elly_pat_prompt_123");
+    const configStore = createConfigStore({ apiUrl: "https://www.ellygent.com/api" });
+    const service = new AuthService(configStore as any);
+
+    await service.login({});
+
+    expect(mocks.input).toHaveBeenCalledWith(
+      expect.objectContaining({
+        default: "https://www.ellygent.com"
+      })
+    );
   });
 });

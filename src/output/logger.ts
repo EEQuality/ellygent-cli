@@ -2,6 +2,7 @@ import chalk from "chalk";
 import { writeFileSync, appendFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
+import { sanitizeErrorData, sanitizeErrorString } from "../errors/sanitize.js";
 
 export enum LogLevel {
   ERROR = 0,
@@ -51,9 +52,11 @@ export class Logger {
     if (!this.enableFileLogging) return;
     
     const timestamp = new Date().toISOString();
+    const safeMessage = sanitizeErrorString(message);
+    const safeData = data ? sanitizeErrorData(data) : undefined;
     const logLine = data 
-      ? `[${timestamp}] [${level}] ${message} ${JSON.stringify(data)}\n`
-      : `[${timestamp}] [${level}] ${message}\n`;
+      ? `[${timestamp}] [${level}] ${safeMessage} ${JSON.stringify(safeData)}\n`
+      : `[${timestamp}] [${level}] ${safeMessage}\n`;
     
     try {
       appendFileSync(this.logFilePath, logLine);
@@ -63,49 +66,53 @@ export class Logger {
   }
 
   error(message: string, data?: unknown): void {
+    const safeMessage = sanitizeErrorString(message);
     if (this.level >= LogLevel.ERROR) {
-      console.error(chalk.red("✗"), message);
+      console.error(chalk.red("✗"), safeMessage);
       if (data && this.level >= LogLevel.DEBUG) {
-        console.error(chalk.dim(JSON.stringify(data, null, 2)));
+        console.error(chalk.dim(JSON.stringify(sanitizeErrorData(data), null, 2)));
       }
     }
-    this.writeToFile("ERROR", message, data);
+    this.writeToFile("ERROR", safeMessage, data);
   }
 
   warn(message: string, data?: unknown): void {
     if (this.quiet) return;
+    const safeMessage = sanitizeErrorString(message);
     
     if (this.level >= LogLevel.WARN) {
-      console.warn(chalk.yellow("⚠"), message);
+      console.warn(chalk.yellow("⚠"), safeMessage);
       if (data && this.level >= LogLevel.DEBUG) {
-        console.warn(chalk.dim(JSON.stringify(data, null, 2)));
+        console.warn(chalk.dim(JSON.stringify(sanitizeErrorData(data), null, 2)));
       }
     }
-    this.writeToFile("WARN", message, data);
+    this.writeToFile("WARN", safeMessage, data);
   }
 
   info(message: string, data?: unknown): void {
     if (this.quiet) return;
+    const safeMessage = sanitizeErrorString(message);
     
     if (this.level >= LogLevel.INFO) {
-      console.log(chalk.blue("ℹ"), message);
+      console.log(chalk.blue("ℹ"), safeMessage);
       if (data && this.level >= LogLevel.DEBUG) {
-        console.log(chalk.dim(JSON.stringify(data, null, 2)));
+        console.log(chalk.dim(JSON.stringify(sanitizeErrorData(data), null, 2)));
       }
     }
-    this.writeToFile("INFO", message, data);
+    this.writeToFile("INFO", safeMessage, data);
   }
 
   debug(message: string, data?: unknown): void {
     if (this.quiet) return;
+    const safeMessage = sanitizeErrorString(message);
     
     if (this.level >= LogLevel.DEBUG) {
-      console.log(chalk.dim(`[DEBUG] ${message}`));
+      console.log(chalk.dim(`[DEBUG] ${safeMessage}`));
       if (data) {
-        console.log(chalk.dim(JSON.stringify(data, null, 2)));
+        console.log(chalk.dim(JSON.stringify(sanitizeErrorData(data), null, 2)));
       }
     }
-    this.writeToFile("DEBUG", message, data);
+    this.writeToFile("DEBUG", safeMessage, data);
   }
 
   success(message: string): void {

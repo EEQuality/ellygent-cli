@@ -5,6 +5,7 @@ import {
   AuthenticationError, 
   NetworkError, 
   ApiError,
+  ApiNotFoundError,
   FileSystemError 
 } from '../errors/EllygentError.js';
 import { ErrorPresenter } from '../errors/ErrorPresenter.js';
@@ -137,6 +138,32 @@ describe('ApiError', () => {
     
     expect(json.responseBody).toEqual({ detail: 'Invalid input' });
   });
+
+  it('sanitizes HTML-like details and redacts tokens in JSON output', () => {
+    const error = new ApiError('Bad request elly_pat_secret_123', 400, {
+      details: {
+        responseSummary: '<!DOCTYPE html><html><body>Not Found</body></html>',
+        accessToken: 'elly_pat_secret_123'
+      }
+    });
+
+    const json = error.toJSON();
+
+    expect(json.message).not.toContain('elly_pat_secret_123');
+    expect((json.details as Record<string, unknown>).responseSummary).not.toContain('<!DOCTYPE html>');
+    expect((json.details as Record<string, unknown>).accessToken).toBe('<redacted>');
+  });
+});
+
+describe('ApiNotFoundError', () => {
+  it('creates API not found error with exit code 4', () => {
+    const error = new ApiNotFoundError('API route missing', 404);
+
+    expect(error.message).toBe('API route missing');
+    expect(error.exitCode).toBe(4);
+    expect(error.statusCode).toBe(404);
+    expect(error.name).toBe('ApiNotFoundError');
+  });
 });
 
 describe('FileSystemError', () => {
@@ -209,5 +236,22 @@ describe('ErrorPresenter', () => {
       error: 'EllygentError',
       exitCode: 1
     }));
+  });
+
+  it('does not print raw HTML details in JSON mode', () => {
+    const output = new OutputController({ mode: OutputMode.JSON });
+    const presenter = new ErrorPresenter(output);
+    const error = new ApiNotFoundError('Endpoint missing', 404, {
+      details: {
+        responseSummary: '<!DOCTYPE html><html><body>__NEXT_DATA__</body></html>'
+      }
+    });
+
+    const dataSpy = vi.spyOn(output, 'data');
+    presenter.present(error);
+
+    const payload = dataSpy.mock.calls[0][0] as Record<string, unknown>;
+    expect(JSON.stringify(payload)).not.toContain('<!DOCTYPE html>');
+    expect(JSON.stringify(payload)).not.toContain('__NEXT_DATA__');
   });
 });

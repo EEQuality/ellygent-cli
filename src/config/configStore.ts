@@ -2,6 +2,7 @@ import { constants as fsConstants } from "node:fs";
 import { access, chmod, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { homedir, platform } from "node:os";
+import { normalizeApiBaseUrl } from "../api/baseUrl.js";
 import type { ConfigKey, EllygentConfig } from "../types/config.js";
 
 export class ConfigStore {
@@ -128,22 +129,7 @@ export function defaultConfigPath(): string {
 }
 
 export function normalizeApiUrl(apiUrl: string): string {
-  const trimmed = String(apiUrl || "").trim();
-  if (!trimmed) {
-    return "";
-  }
-
-  let parsed: URL;
-  try {
-    parsed = new URL(trimmed);
-  } catch {
-    throw new ConfigError("API URL must be a valid absolute URL");
-  }
-
-  parsed.pathname = parsed.pathname.replace(/\/+$/, "");
-  parsed.search = "";
-  parsed.hash = "";
-  return parsed.toString().replace(/\/$/, "");
+  return normalizeApiBaseUrl(apiUrl);
 }
 
 function normalizeConfigValue(key: ConfigKey, value: string): string {

@@ -62,7 +62,7 @@ ${chalk.bold("Shell Completion")}
 
 ${chalk.bold("EXAMPLES")}
   ${chalk.dim("#")} ${chalk.dim("Authenticate with a Personal Access Token")}
-  ${chalk.cyan("$")} ellygent auth login --token elly_pat_xxx
+  ${chalk.cyan("$")} ellygent login --token elly_pat_xxx
 
   ${chalk.dim("#")} ${chalk.dim("Check authentication status")}
   ${chalk.cyan("$")} ellygent whoami
@@ -115,11 +115,12 @@ function registerLegacyCommandsWithWarnings(program: Command, context: typeof cr
   };
 
   // Legacy: ellygent auth login → ellygent auth login
-  const legacyLogin = program
-    .command("login", { hidden: true })
-    .description("[DEPRECATED] Use 'ellygent auth login' instead")
-    .option("--api-url <url>", "Ellygent API URL")
-    .option("--token <token>", "Personal Access Token")
+    const legacyLogin = program
+        .command("login", { hidden: true })
+        .description("[DEPRECATED] Use 'ellygent auth login' instead")
+        .option("--url <url>", "Ellygent server URL")
+        .option("--api-url <url>", "Deprecated alias for --url")
+        .option("--token <token>", "Personal Access Token")
     .action(async (...args) => {
       warnDeprecated("login", "auth login");
       // Forward to new command by invoking it programmatically

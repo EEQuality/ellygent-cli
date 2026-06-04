@@ -1,3 +1,5 @@
+import { sanitizeErrorData, sanitizeErrorString } from "./sanitize.js";
+
 /**
  * Base error class for all Ellygent CLI errors
  * Provides exit codes, suggestions, and structured error details
@@ -44,10 +46,10 @@ export class EllygentError extends Error {
   toJSON(): Record<string, unknown> {
     return {
       error: this.name,
-      message: this.message,
+      message: sanitizeErrorString(this.message),
       exitCode: this.exitCode,
-      suggestions: this.suggestions,
-      details: this.details
+      suggestions: this.suggestions?.map(sanitizeErrorString),
+      details: sanitizeErrorData(this.details) as Record<string, unknown> | undefined
     };
   }
 }
@@ -97,7 +99,7 @@ export class NetworkError extends EllygentError {
       exitCode: 4,
       suggestions: options?.suggestions ?? [
         "Check your internet connection",
-        "Verify the API URL with 'ellygent config get api-url'",
+        "Verify the server URL with 'ellygent config get api-url'",
         "Try again in a few moments"
       ],
       details: options?.details,
@@ -143,8 +145,29 @@ export class ApiError extends EllygentError {
     return {
       ...super.toJSON(),
       statusCode: this.statusCode,
-      responseBody: this.responseBody
+      responseBody: sanitizeErrorData(this.responseBody)
     };
+  }
+}
+
+/**
+ * API routing/configuration error (backend endpoint missing or misrouted)
+ * Exit code: 4
+ */
+export class ApiNotFoundError extends ApiError {
+  constructor(
+    message: string,
+    statusCode: number,
+    options?: {
+      suggestions?: string[];
+      details?: Record<string, unknown>;
+      responseBody?: unknown;
+      cause?: Error;
+    }
+  ) {
+    super(message, statusCode, options);
+    this.name = "ApiNotFoundError";
+    this.exitCode = 4;
   }
 }
 

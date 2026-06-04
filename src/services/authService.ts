@@ -1,4 +1,5 @@
 import { password, input } from "@inquirer/prompts";
+import { getServerUrlFromApiBase } from "../api/baseUrl.js";
 import { ContextApiClient } from "../api/contextApiClient.js";
 import { ConfigStore, normalizeApiUrl } from "../config/configStore.js";
 
@@ -12,11 +13,14 @@ export class AuthService {
 
   async login(options: LoginOptions = {}): Promise<{ apiUrl: string }> {
     const current = await this.configStore.load();
+    const defaultServerUrl = current.apiUrl
+      ? getServerUrlFromApiBase(current.apiUrl)
+      : "https://www.ellygent.com";
     const apiUrl = normalizeApiUrl(
       options.apiUrl ||
         (await input({
-          message: "Ellygent API URL",
-          default: current.apiUrl || "https://www.ellygent.com/api/"
+          message: "Ellygent server URL\nEnter the Ellygent server URL, for example https://www.ellygent.com. Do not include /api; the CLI adds it automatically.",
+          default: defaultServerUrl
         }))
     );
 

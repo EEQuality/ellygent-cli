@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import { EllygentError } from "./EllygentError.js";
 import { OutputController } from "../output/OutputController.js";
+import { sanitizeErrorData, sanitizeErrorString } from "./sanitize.js";
 
 /**
  * Presents errors in a user-friendly format
@@ -30,9 +31,9 @@ export class ErrorPresenter {
     // Log to debug
     this.output.debug("Error occurred", {
       name: ellygentError.name,
-      message: ellygentError.message,
+      message: sanitizeErrorString(ellygentError.message),
       exitCode: ellygentError.exitCode,
-      stack: ellygentError.stack
+      stack: sanitizeErrorString(ellygentError.stack || "")
     });
     
     // Flush output
@@ -72,12 +73,13 @@ export class ErrorPresenter {
    */
   private presentHuman(error: EllygentError): void {
     // Main error message
-    this.output.error(error.message);
+    this.output.error(sanitizeErrorString(error.message));
     
     // Additional details in verbose/debug mode
     if (this.output.isVerbose() && error.details) {
       console.error(chalk.dim("\nDetails:"));
-      for (const [key, value] of Object.entries(error.details)) {
+      const sanitizedDetails = sanitizeErrorData(error.details) as Record<string, unknown>;
+      for (const [key, value] of Object.entries(sanitizedDetails)) {
         console.error(chalk.dim(`  ${key}: ${JSON.stringify(value)}`));
       }
     }
@@ -86,14 +88,14 @@ export class ErrorPresenter {
     if (!this.output.isQuiet() && error.suggestions && error.suggestions.length > 0) {
       console.error(chalk.yellow("\nSuggestions:"));
       for (const suggestion of error.suggestions) {
-        console.error(chalk.yellow(`  • ${suggestion}`));
+        console.error(chalk.yellow(`  • ${sanitizeErrorString(suggestion)}`));
       }
     }
     
     // Stack trace in debug mode
     if (this.output.isDebug() && error.stack) {
       console.error(chalk.dim("\nStack trace:"));
-      console.error(chalk.dim(error.stack));
+      console.error(chalk.dim(sanitizeErrorString(error.stack)));
     }
   }
 }

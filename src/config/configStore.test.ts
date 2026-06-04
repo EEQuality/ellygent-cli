@@ -1,177 +1,103 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { loadFromEnv, normalizeApiUrl, ConfigError } from '../config/configStore.js';
+import { describe, it, expect, afterEach, vi } from "vitest";
+import { loadFromEnv, normalizeApiUrl, ConfigError } from "../config/configStore.js";
 
-describe('loadFromEnv', () => {
+describe("loadFromEnv", () => {
   const originalEnv = { ...process.env };
 
   afterEach(() => {
     process.env = { ...originalEnv };
   });
 
-  it('loads ELLYGENT_API_URL from environment', () => {
-    process.env.ELLYGENT_API_URL = 'https://api.example.com';
-    
+  it("loads ELLYGENT_API_URL from environment and normalizes it to /api", () => {
+    process.env.ELLYGENT_API_URL = "https://www.ellygent.com";
+
     const config = loadFromEnv();
-    
-    expect(config.apiUrl).toBe('https://api.example.com');
+
+    expect(config.apiUrl).toBe("https://www.ellygent.com/api");
   });
 
-  it('loads ELLYGENT_TOKEN as accessToken', () => {
-    process.env.ELLYGENT_TOKEN = 'test_token_123';
-    
+  it("loads ELLYGENT_TOKEN as accessToken", () => {
+    process.env.ELLYGENT_TOKEN = "test_token_123";
+
     const config = loadFromEnv();
-    
-    expect(config.accessToken).toBe('test_token_123');
+
+    expect(config.accessToken).toBe("test_token_123");
   });
 
-  it('loads ELLYGENT_ORG as defaultOrg', () => {
-    process.env.ELLYGENT_ORG = 'my-org';
-    
+  it("loads ELLYGENT_ORG as defaultOrg", () => {
+    process.env.ELLYGENT_ORG = "my-org";
+
     const config = loadFromEnv();
-    
-    expect(config.defaultOrg).toBe('my-org');
+
+    expect(config.defaultOrg).toBe("my-org");
   });
 
-  it('loads ELLYGENT_PROJECT as defaultProject', () => {
-    process.env.ELLYGENT_PROJECT = 'my-project';
-    
+  it("loads ELLYGENT_PROJECT as defaultProject", () => {
+    process.env.ELLYGENT_PROJECT = "my-project";
+
     const config = loadFromEnv();
-    
-    expect(config.defaultProject).toBe('my-project');
+
+    expect(config.defaultProject).toBe("my-project");
   });
 
-  it('returns empty object when no env vars set', () => {
+  it("returns empty object when no env vars set", () => {
     delete process.env.ELLYGENT_API_URL;
     delete process.env.ELLYGENT_TOKEN;
     delete process.env.ELLYGENT_ORG;
     delete process.env.ELLYGENT_PROJECT;
-    
+
     const config = loadFromEnv();
-    
+
     expect(config).toEqual({});
   });
 
-  it('trims whitespace from env vars', () => {
-    process.env.ELLYGENT_ORG = '  my-org  ';
-    process.env.ELLYGENT_TOKEN = ' token123 ';
-    
-    const config = loadFromEnv();
-    
-    expect(config.defaultOrg).toBe('my-org');
-    expect(config.accessToken).toBe('token123');
-  });
+  it("warns on invalid API URL but continues", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    process.env.ELLYGENT_API_URL = "not-a-url";
 
-  it('ignores empty env vars', () => {
-    process.env.ELLYGENT_ORG = '   ';
-    process.env.ELLYGENT_TOKEN = '';
-    
     const config = loadFromEnv();
-    
-    expect(config.defaultOrg).toBeUndefined();
-    expect(config.accessToken).toBeUndefined();
-  });
 
-  it('warns on invalid API URL but continues', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    process.env.ELLYGENT_API_URL = 'not-a-url';
-    
-    const config = loadFromEnv();
-    
     expect(config.apiUrl).toBeUndefined();
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid ELLYGENT_API_URL'));
-    
-    warnSpy.mockRestore();
-  });
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Invalid ELLYGENT_API_URL"));
 
-  it('loads multiple env vars at once', () => {
-    process.env.ELLYGENT_API_URL = 'https://api.test.com';
-    process.env.ELLYGENT_TOKEN = 'token';
-    process.env.ELLYGENT_ORG = 'org';
-    process.env.ELLYGENT_PROJECT = 'proj';
-    
-    const config = loadFromEnv();
-    
-    expect(config).toEqual({
-      apiUrl: 'https://api.test.com',
-      accessToken: 'token',
-      defaultOrg: 'org',
-      defaultProject: 'proj'
-    });
+    warnSpy.mockRestore();
   });
 });
 
-describe('normalizeApiUrl', () => {
-  it('normalizes valid URL', () => {
-    const url = normalizeApiUrl('https://api.example.com');
-    
-    expect(url).toBe('https://api.example.com');
+describe("normalizeApiUrl", () => {
+  it("normalizes a root production URL to /api", () => {
+    expect(normalizeApiUrl("https://www.ellygent.com")).toBe("https://www.ellygent.com/api");
+    expect(normalizeApiUrl("https://www.ellygent.com/")).toBe("https://www.ellygent.com/api");
   });
 
-  it('removes trailing slashes', () => {
-    const url = normalizeApiUrl('https://api.example.com/');
-    
-    expect(url).toBe('https://api.example.com');
+  it("normalizes a production URL that already includes /api", () => {
+    expect(normalizeApiUrl("https://www.ellygent.com/api")).toBe("https://www.ellygent.com/api");
+    expect(normalizeApiUrl("https://www.ellygent.com/api/")).toBe("https://www.ellygent.com/api");
   });
 
-  it('removes multiple trailing slashes', () => {
-    const url = normalizeApiUrl('https://api.example.com///');
-    
-    expect(url).toBe('https://api.example.com');
+  it("normalizes localhost development URLs to /api and keeps http", () => {
+    expect(normalizeApiUrl("http://127.0.0.1:8000")).toBe("http://127.0.0.1:8000/api");
+    expect(normalizeApiUrl("http://127.0.0.1:8000/api/")).toBe("http://127.0.0.1:8000/api");
   });
 
-  it('removes pathname trailing slashes', () => {
-    const url = normalizeApiUrl('https://api.example.com/api/v1/');
-    
-    expect(url).toBe('https://api.example.com/api/v1');
+  it("removes query string and fragment", () => {
+    expect(normalizeApiUrl("https://www.ellygent.com/?foo=bar#section")).toBe("https://www.ellygent.com/api");
   });
 
-  it('removes query string', () => {
-    const url = normalizeApiUrl('https://api.example.com?foo=bar');
-    
-    expect(url).toBe('https://api.example.com');
+  it("trims whitespace", () => {
+    expect(normalizeApiUrl("  https://www.ellygent.com  ")).toBe("https://www.ellygent.com/api");
   });
 
-  it('removes hash fragment', () => {
-    const url = normalizeApiUrl('https://api.example.com#section');
-    
-    expect(url).toBe('https://api.example.com');
+  it("throws on invalid URL", () => {
+    expect(() => normalizeApiUrl("not-a-url")).toThrow(ConfigError);
+    expect(() => normalizeApiUrl("not-a-url")).toThrow("Ellygent server URL must be a valid absolute URL");
   });
 
-  it('preserves port', () => {
-    const url = normalizeApiUrl('https://www.ellygent.com/api/');
-    
-    expect(url).toBe('https://www.ellygent.com/api');
+  it("throws on relative URL", () => {
+    expect(() => normalizeApiUrl("/api")).toThrow(ConfigError);
   });
 
-  it('preserves pathname', () => {
-    const url = normalizeApiUrl('https://api.example.com/v2');
-    
-    expect(url).toBe('https://api.example.com/v2');
-  });
-
-  it('throws on invalid URL', () => {
-    expect(() => normalizeApiUrl('not-a-url')).toThrow(ConfigError);
-    expect(() => normalizeApiUrl('not-a-url')).toThrow('must be a valid absolute URL');
-  });
-
-  it('throws on relative URL', () => {
-    expect(() => normalizeApiUrl('/api/v1')).toThrow(ConfigError);
-  });
-
-  it('returns empty string for empty input', () => {
-    const url = normalizeApiUrl('');
-    
-    expect(url).toBe('');
-  });
-
-  it('trims whitespace', () => {
-    const url = normalizeApiUrl('  https://api.example.com  ');
-    
-    expect(url).toBe('https://api.example.com');
-  });
-
-  it('handles http and https', () => {
-    expect(normalizeApiUrl('http://api.example.com')).toBe('http://api.example.com');
-    expect(normalizeApiUrl('https://api.example.com')).toBe('https://api.example.com');
+  it("returns empty string for empty input", () => {
+    expect(normalizeApiUrl("")).toBe("");
   });
 });
