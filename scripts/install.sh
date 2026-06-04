@@ -54,6 +54,15 @@ require_command() {
   fi
 }
 
+assert_package_url_exists() {
+  if ! curl -fsI -L "$1" >/dev/null 2>&1; then
+    error "GitHub Release package is not available yet."
+    error "Expected package URL: $1"
+    error "Publish a CLI GitHub Release that includes the npm tarball asset before using this installer."
+    exit 1
+  fi
+}
+
 main() {
   echo ""
   info "Installing Ellygent CLI from GitHub Release with npm"
@@ -62,6 +71,8 @@ main() {
   require_command node "Install Node.js 20+ from https://nodejs.org/"
   require_command npm "Install npm by installing Node.js 20+ from https://nodejs.org/"
   require_command git "Install Git from https://git-scm.com/downloads"
+  require_command curl "Install curl or use the PowerShell installer on Windows."
+  assert_package_url_exists "$PACKAGE_URL"
 
   info "npm package source: ${PACKAGE_URL}"
   npm install -g "$PACKAGE_URL"

@@ -76,6 +76,22 @@ function Add-NpmBinToPathIfNeeded {
     }
 }
 
+function Assert-PackageUrlExists {
+    param([string]$Url)
+
+    try {
+        $response = Invoke-WebRequest -Uri $Url -Method Head -MaximumRedirection 5 -ErrorAction Stop
+        if ($response.StatusCode -ge 400) {
+            throw "Unexpected status code: $($response.StatusCode)"
+        }
+    } catch {
+        Write-Fail "GitHub Release package is not available yet."
+        Write-Host "  Expected package URL: $Url"
+        Write-Host "  Publish a CLI GitHub Release that includes the npm tarball asset before using this installer."
+        exit 1
+    }
+}
+
 function Install-EllygentCli {
     Write-Host ""
     Write-Info "Installing Ellygent CLI from GitHub Release with npm"
@@ -84,6 +100,7 @@ function Install-EllygentCli {
     Assert-Command -Name "node" -InstallHint "Install Node.js 20+ from https://nodejs.org/"
     Assert-Command -Name "npm" -InstallHint "Install npm by installing Node.js 20+ from https://nodejs.org/"
     Assert-Command -Name "git" -InstallHint "Install Git from https://git-scm.com/download/win"
+    Assert-PackageUrlExists -Url $PackageUrl
 
     Write-Info "npm package source: $PackageUrl"
     & npm install -g $PackageUrl
