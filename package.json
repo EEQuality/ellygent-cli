@@ -21,6 +21,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts",
+    "prepare": "npm run build",
     "prepack": "npm run build",
     "build:release": "npm run build",
     "publish:frontend": "node scripts/publish-to-frontend.js"
