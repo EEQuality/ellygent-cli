@@ -81,6 +81,25 @@ export class HttpClient {
     );
   }
 
+  async downloadFromUrl(path: string, targetPath: string): Promise<void> {
+    const response = await this.request(path, { method: "GET" });
+
+    if (!response.body) {
+      throw new ApiError(
+        "Server returned an empty download response",
+        response.status,
+        {
+          suggestions: ["Try again", "Contact your administrator if the problem persists"]
+        }
+      );
+    }
+
+    await pipeline(
+      Readable.fromWeb(response.body as unknown as import("node:stream/web").ReadableStream<Uint8Array>),
+      createWriteStream(targetPath)
+    );
+  }
+
   private async request(path: string, init: RequestInit): Promise<Response> {
     const url = joinApiUrl(this.apiUrl, path);
     const headers = new Headers(init.headers);

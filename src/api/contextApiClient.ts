@@ -34,4 +34,21 @@ export class ContextApiClient {
   downloadContextPackage(payload: ContextExportRequest, targetPath: string): Promise<void> {
     return this.http.downloadToFile(endpoints.context.export, payload, targetPath);
   }
+
+  /**
+   * Download ReqIF or ReqIFZ export using the legacy export endpoint.
+   * @param projectIdentifier Project identifier
+   * @param format Export format (reqif or reqifz)
+   * @param versionIdentifier Version identifier (required for ReqIF exports)
+   * @param targetPath Local file path to save the export
+   */
+  downloadReqIFExport(
+    projectIdentifier: string,
+    format: "reqif" | "reqifz",
+    versionIdentifier: string,
+    targetPath: string
+  ): Promise<void> {
+    const url = endpoints.legacy.export(projectIdentifier, format, versionIdentifier);
+    return this.http.downloadFromUrl(url, targetPath);
+  }
 }

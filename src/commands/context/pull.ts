@@ -15,6 +15,8 @@ interface PullOptions {
   includeGlossary?: boolean;
   includeAiSummaries?: boolean;
   workspace?: string;
+  format?: string;
+  out?: string;
 }
 
 function collect(value: string, previous: string[]): string[] {
@@ -25,8 +27,8 @@ export function registerPullCommand(program: Command, context: CommandContext): 
   program
     .command("pull")
     .description("Download engineering context package to local workspace")
-    .option("--project <identifier>", "Project identifier (alternative_id)")
-    .option("--version <identifier>", "Version identifier", "main")
+    .option("--format <type>", "Export format: context (default), markdown, reqif, reqifz", "context")
+    .option("--out <path>", "Output file path (for reqif/reqifz/markdown formats)")
     .option("--spec <identifier>", "Specification identifier to include (repeatable)", collect, [])
     .option("--system-definition <identifier>", "System definition identifier to include (repeatable)", collect, [])
     .option("--include-traceability", "Include traceability mappings")
@@ -47,6 +49,27 @@ EXAMPLES
       --include-traceability \\
       --include-glossary
 
+  # Export as ReqIF (requires specific version)
+  $ ellygent context pull \\
+      --project tractor_control \\
+      --version baseline-1.0.0 \\
+      --format reqif \\
+      --out ./tractor-baseline-1.0.0.reqif
+
+  # Export as ReqIFZ archive (requires specific version)
+  $ ellygent context pull \\
+      --project safety_system \\
+      --version v2.1.0 \\
+      --format reqifz \\
+      --out ./safety-v2.1.0.reqifz
+
+  # Export as Markdown
+  $ ellygent context pull \\
+      --project tractor_control \\
+      --version baseline-1.0.0 \\
+      --format markdown \\
+      --out ./tractor.md
+
   # Pull specific specifications only
   $ ellygent context pull \\
       --project tractor_control \\
@@ -62,6 +85,12 @@ EXAMPLES
 LEARN MORE
   Documentation: https://www.ellygent.com/cli/docs/commands
   Use 'ellygent context inspect' to preview available content
+
+IMPORTANT: ReqIF and ReqIFZ exports require a specific project version.
+  Exporting from MAIN or live state is not allowed for ReqIF formats.
+  Create a version first: 'ellygent versions create --project <project> --name <name>'
+  Documentation: https://www.ellygent.com/cli/docs/commands
+  Use 'ellygent context inspect' to preview available content
 `)
     .action(
       withErrorHandling(async (options: PullOptions, command) => {
@@ -73,8 +102,60 @@ LEARN MORE
           "`ellygent config set default-project <identifier>`"
         );
         const version = options.version || "main";
+        const format = (options.format || "context").toLowerCase();
+
+        // Validate format
+        const validFormats = ["context", "markdown", "md", "reqif", "reqifz"];
+        if (!validFormats.includes(format)) {
+          throw new Error(
+            `Invalid format: ${format}. Valid formats: ${validFormats.join(", ")}`
+          );
+        }
+
+        // ReqIF formats MUST have a specific version (not MAIN)
+        if (format === "reqif" || format === "reqifz") {
+          if (!options.version || version.toLowerCase() === "main") {
+            throw new Error(
+              "ReqIF export requires a specific project version.\n" +
+              "Exporting ReqIF from MAIN is not allowed.\n" +
+              "\n" +
+              "Create or select a project version and retry with --version <version-identifier>\n" +
+              "\n" +
+              "Example:\n" +
+              `  ellygent pull --project ${project} --version <version> --format ${format} --out ./project.${format}`
+            );
+          }
+        }
+
         const client = await context.clientFactory.contextClient();
 
+        // Handle ReqIF/ReqIFZ export
+        if (format === "reqif" || format === "reqifz") {
+          const outputPath = requireOption(
+            options.out,
+            "--out",
+            "Output file path is required for ReqIF exports"
+          );
+
+          await spin(`Exporting ${project}@${version} as ${format.toUpperCase()}`, () =>
+            client.downloadReqIFExport(project, format as "reqif" | "reqifz", version, outputPath)
+          );
+
+          outputSuccess(`${format.toUpperCase()} exported to ${outputPath}`, formatter);
+          outputInfo(`${project}@${version}`, formatter);
+          return;
+        }
+
+        // Handle markdown export
+        if (format === "markdown" || format === "md") {
+          if (!options.out) {
+            throw new Error("--out option is required for markdown format");
+          }
+          // TODO: Implement markdown export via legacy export endpoint
+          throw new Error("Markdown export format is not yet implemented via CLI");
+        }
+
+        // Handle context package export (default)
         const result = await spin(`Syncing ${project}@${version}`, () =>
           new SyncService(client).sync({
             project,

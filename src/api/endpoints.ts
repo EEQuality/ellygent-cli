@@ -7,5 +7,11 @@ export const endpoints = {
     contents: (projectIdentifier: string, versionIdentifier: string) =>
       `context/projects/${encodeURIComponent(projectIdentifier)}/versions/${encodeURIComponent(versionIdentifier)}/contents`,
     export: "context/export"
+  },
+  legacy: {
+    export: (projectIdentifier: string, format: string, versionIdentifier?: string) => {
+      const base = `backend/exportProject/${encodeURIComponent(projectIdentifier)}/?f=${format}`;
+      return versionIdentifier ? `${base}&version=${encodeURIComponent(versionIdentifier)}` : base;
+    }
   }
 } as const;

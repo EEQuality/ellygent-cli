@@ -170,29 +170,89 @@ ellygent contents --project tractor_control --version main -f json
 
 ## Sync Context to Local Workspace
 
-Download an AI-optimized context package:
+Download an AI-optimized context package or export project data in various formats:
 
 ```bash
-ellygent sync --project tractor_control --version main
+# Download context package (default)
+ellygent context pull --project tractor_control --version main
+
+# Export as ReqIF (requires specific version, not MAIN)
+ellygent context pull \
+  --project tractor_control \
+  --version baseline-1.0.0 \
+  --format reqif \
+  --out ./tractor-baseline-1.0.0.reqif
+
+# Export as ReqIFZ archive (requires specific version, not MAIN)
+ellygent context pull \
+  --project safety_system \
+  --version v2.1.0 \
+  --format reqifz \
+  --out ./safety-v2.1.0.reqifz
 ```
 
-This downloads a ZIP package from the Context API and safely extracts it into `./.ellygent/` with markdown requirements, JSON metadata, and traceability data.
+The default behavior downloads a ZIP package from the Context API and safely extracts it into `./.ellygent/` with markdown requirements, JSON metadata, and traceability data.
+
+### Export Formats
+
+The `--format` option controls the export format:
+
+| Format | Description | Version Requirement | Output |
+|--------|-------------|---------------------|--------|
+| `context` (default) | AI-optimized context package | Any version including MAIN | ZIP extracted to workspace |
+| `markdown` or `md` | Markdown document export | Any version including MAIN | Single .md file (--out required) |
+| `reqif` | ReqIF XML export | **Specific version required** | Single .reqif file (--out required) |
+| `reqifz` | ReqIF ZIP archive | **Specific version required** | Single .reqifz file (--out required) |
+
+**Important: ReqIF Export Restriction**
+
+ReqIF and ReqIFZ exports represent formal baselines and **must** use a specific project version. Exporting ReqIF from MAIN or live state is not allowed because:
+
+- ReqIF files are intended for data interchange and archival
+- They must represent an immutable, approved baseline
+- Exporting from MAIN risks producing unstable or non-reproducible files
+
+**Valid ReqIF export:**
+```bash
+ellygent context pull \
+  --project tractor_control \
+  --version baseline-1.0.0 \
+  --format reqif \
+  --out ./tractor.reqif
+```
+
+**Invalid ReqIF export (will fail):**
+```bash
+# Missing version - will fail
+ellygent context pull --project tractor_control --format reqif --out ./tractor.reqif
+
+# Using MAIN - will fail
+ellygent context pull \
+  --project tractor_control \
+  --version main \
+  --format reqif \
+  --out ./tractor.reqif
+```
+
+To export as ReqIF:
+1. Create a project version first: `ellygent context versions create --project <project> --name <version-name>`
+2. Then export with the version identifier
 
 ### Sync Options
 
 ```bash
 # Sync to custom workspace directory
-ellygent sync --project tractor_control --version main --workspace ./context/
+ellygent context pull --project tractor_control --version main --workspace ./context/
 
 # Selective export: specific specifications only
-ellygent sync \
+ellygent context pull \
   --project tractor_control \
   --version main \
   --spec functional_requirements \
   --spec safety_requirements
 
 # Include optional context
-ellygent sync \
+ellygent context pull \
   --project tractor_control \
   --version main \
   --include-traceability \
