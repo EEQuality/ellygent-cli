@@ -58,6 +58,9 @@ export interface ContextExportRequest {
 
 export interface PackageManifest {
   schema_version: string;
+  export_layout?: "hierarchy_documents" | string;
+  hierarchy_count?: number;
+  system_definition_hierarchy_count?: number;
   project: {
     identifier: string;
     name: string;

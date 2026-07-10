@@ -191,7 +191,24 @@ ellygent context pull \
   --out ./safety-v2.1.0.reqifz
 ```
 
-The default behavior downloads a ZIP package from the Context API and safely extracts it into `./.ellygent/` with markdown requirements, JSON metadata, and traceability data.
+The default behavior downloads a ZIP package from the Context API and safely extracts it into `./.ellygent/`. Context schema 2 uses compact, hierarchy-based Markdown:
+
+```text
+.ellygent/
+├── manifest.json
+├── project-summary.md
+├── system-definition.md
+└── requirements/
+    ├── Autonomous Vacuum Robot.md
+    ├── Navigation.md
+    └── Safety Goals.md
+```
+
+Each file under `requirements/` contains one complete specification hierarchy. Requirement nesting is represented by Markdown heading depth, so individual requirements no longer create individual files. Filenames come from human-readable hierarchy titles and are sanitized for Windows, macOS, and Linux; stable internal identifiers remain available in Markdown comments.
+
+`system-definition.md` is always at the package root and contains all exported System Definition hierarchies, including categories the CLI does not know about yet. Rich-text paragraphs, lists, tables, formatting, and links are converted to deterministic Markdown. Empty fields are omitted, metadata is compact, and relations use readable titles and links when their targets are exported.
+
+This schema 2 layout is a breaking presentation change. Scripts that expected one file per requirement or `architecture/system-definitions.md` must migrate to the hierarchy documents and `system-definition.md`. Authentication, project/version selection, public identifiers, and synchronization commands are unchanged. See [Context Export Format](documentation/CONTEXT-EXPORT-FORMAT.md) for the complete conventions.
 
 ### Export Formats
 
