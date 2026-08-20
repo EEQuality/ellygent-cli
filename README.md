@@ -197,6 +197,7 @@ The default behavior downloads a ZIP package from the Context API and safely ext
 .ellygent/
 ├── manifest.json
 ├── project-summary.md
+├── relations.json
 ├── system-definition.md
 └── requirements/
     ├── Autonomous Vacuum Robot.md
@@ -207,6 +208,10 @@ The default behavior downloads a ZIP package from the Context API and safely ext
 Each file under `requirements/` contains one complete specification hierarchy. Requirement nesting is represented by Markdown heading depth, so individual requirements no longer create individual files. Filenames come from human-readable hierarchy titles and are sanitized for Windows, macOS, and Linux; stable internal identifiers remain available in Markdown comments.
 
 `system-definition.md` is always at the package root and contains all exported System Definition hierarchies, including categories the CLI does not know about yet. Rich-text paragraphs, lists, tables, formatting, and links are converted to deterministic Markdown. Empty fields are omitted, metadata is compact, and relations use readable titles and links when their targets are exported.
+
+`relations.json` is the canonical machine-readable traceability graph. Its stable schema contains deduplicated, deterministically ordered relations with public identifiers, titles, object types, relation types, and hierarchy locations. It is suitable for graph tools, impact analysis, and external reporting without parsing Markdown.
+
+Requirement headings prominently include public identifiers, and entries are separated for quick scanning. Large documents gain linked contents, while breadcrumbs and parent/child links make both human and AI traversal explicit. Structured System Definition content—including Operational Scenarios, Actors, and System Capabilities—is rendered as engineering Markdown rather than embedded JSON. List-like fields become Markdown lists.
 
 This schema 2 layout is a breaking presentation change. Scripts that expected one file per requirement or `architecture/system-definitions.md` must migrate to the hierarchy documents and `system-definition.md`. Authentication, project/version selection, public identifiers, and synchronization commands are unchanged. See [Context Export Format](documentation/CONTEXT-EXPORT-FORMAT.md) for the complete conventions.
 

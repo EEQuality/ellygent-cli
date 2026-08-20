@@ -61,6 +61,7 @@ export interface PackageManifest {
   export_layout?: "hierarchy_documents" | string;
   hierarchy_count?: number;
   system_definition_hierarchy_count?: number;
+  relation_count?: number;
   project: {
     identifier: string;
     name: string;
