@@ -270,6 +270,12 @@ export async function buildApiError(response: Response, url: string): Promise<Ap
 
   // General API error with helpful suggestions
   const suggestions: string[] = [];
+  if (status === 404 && isObject(details) && typeof details.detail === "string" && /project|version|specification|system_definitions/i.test(details.detail)) {
+    return new ApiError(details.detail, status, {
+      suggestions: ["Use context projects, context versions and context inspect to choose identifiers you can access."],
+      details: { requestedUrl: url, httpStatus: status }
+    });
+  }
   if (status === 404) {
     const probableCause = duplicatedApiPath
       ? "API base URL normalization appended /api more than once."

@@ -1,4 +1,5 @@
 import type { Command } from "commander";
+import { MarkdownExportService } from "../../services/markdownExportService.js";
 import { SyncService } from "../../services/syncService.js";
 import type { CommandContext } from "../shared.js";
 import { getFormatter, requireOption, spin, withErrorHandling } from "../shared.js";
@@ -17,6 +18,8 @@ interface PullOptions {
   workspace?: string;
   format?: string;
   out?: string;
+  scope?: "all" | "specifications" | "system-definition";
+  overwrite?: boolean;
 }
 
 function collect(value: string, previous: string[]): string[] {
@@ -26,9 +29,13 @@ function collect(value: string, previous: string[]): string[] {
 export function registerPullCommand(program: Command, context: CommandContext): void {
   program
     .command("pull")
-    .description("Download engineering context package to local workspace")
+    .description("Download engineering context or export Markdown / ReqIF")
+    .option("--project <identifier>", "Project / ReqIF identifier (or configured default)")
+    .option("--version <identifier>", "Live main or saved baseline identifier", "main")
     .option("--format <type>", "Export format: context (default), markdown, reqif, reqifz", "context")
-    .option("--out <path>", "Output file path (for reqif/reqifz/markdown formats)")
+    .option("--out <path>", "Markdown output file (.md) or directory; ReqIF/ReqIFZ output file")
+    .option("--scope <scope>", "Markdown content: all, specifications, system-definition", "all")
+    .option("--overwrite", "Replace existing Markdown output and its companion directory")
     .option("--spec <identifier>", "Specification identifier to include (repeatable)", collect, [])
     .option("--system-definition <identifier>", "System definition identifier to include (repeatable)", collect, [])
     .option("--include-traceability", "Include traceability mappings")
@@ -63,12 +70,24 @@ EXAMPLES
       --format reqifz \\
       --out ./safety-v2.1.0.reqifz
 
-  # Export as Markdown
-  $ ellygent context pull \\
-      --project tractor_control \\
-      --version baseline-1.0.0 \\
-      --format markdown \\
-      --out ./tractor.md
+  # One specification, with companion assets/context in tractor.files/
+  $ ellygent context pull --project tractor_control --spec functional_requirements --format markdown --out ./tractor.md
+
+  # All specifications as separate documents, with index.md
+  $ ellygent context pull --project tractor_control --format markdown --scope specifications --out ./docs
+
+  # System-definition context (scenarios, constraints and recorded questions)
+  $ ellygent context pull --project tractor_control --format markdown --scope system-definition --out ./system.md
+
+  # All context from a saved baseline; explicitly replace an earlier export
+  $ ellygent context pull --project tractor_control --version baseline-1.0.0 --format markdown --out ./baseline-docs --overwrite
+
+  Markdown exports include available referenced project files with relative links.
+  A .md output creates a sibling <name>.files/ directory; keep them together.
+  --overwrite replaces the complete output directory (or file and companion).
+  Missing assets produce export-report.md and exit code 2 (partial export).
+  Baseline documents use current project-file bytes; assets are not versioned.
+  External images are reported, not fetched; external hyperlinks stay external.
 
   # Pull specific specifications only
   $ ellygent context pull \\
@@ -88,7 +107,7 @@ LEARN MORE
 
 IMPORTANT: ReqIF and ReqIFZ exports require a specific project version.
   Exporting from MAIN or live state is not allowed for ReqIF formats.
-  Create a version first: 'ellygent versions create --project <project> --name <name>'
+  Create a version in the web app, then select its identifier.
   Documentation: https://www.ellygent.com/cli/docs/commands
   Use 'ellygent context inspect' to preview available content
 `)
@@ -151,8 +170,27 @@ IMPORTANT: ReqIF and ReqIFZ exports require a specific project version.
           if (!options.out) {
             throw new Error("--out option is required for markdown format");
           }
-          // TODO: Implement markdown export via legacy export endpoint
-          throw new Error("Markdown export format is not yet implemented via CLI");
+          const result = await spin(`Exporting Markdown ${project}@${version}`, () =>
+            new MarkdownExportService(client).export({
+              project, version, out: options.out!, scope: options.scope, overwrite: options.overwrite,
+              selection: {
+                specifications: options.spec, system_definitions: options.systemDefinition,
+                include_traceability: options.includeTraceability, include_architecture: options.includeArchitecture,
+                include_constraints: options.includeConstraints, include_glossary: options.includeGlossary,
+                include_ai_summaries: options.includeAiSummaries,
+              },
+            })
+          );
+          if (result.report.status === "partial") {
+            outputInfo(`Partial Markdown export written to ${result.outputPath}. See export-report.md.`, formatter);
+            for (const issue of result.report.unavailable_assets) outputInfo(`${issue.reference}: ${issue.reason}`, formatter);
+            process.exitCode = 2;
+          } else {
+            outputSuccess(`Markdown exported to ${result.outputPath}`, formatter);
+          }
+          outputInfo(`Version ${result.manifest.version.identifier} (${result.manifest.version.type})`, formatter);
+          for (const limitation of result.report.limitations) outputInfo(limitation, formatter);
+          return;
         }
 
         // Handle context package export (default)

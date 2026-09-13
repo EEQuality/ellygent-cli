@@ -53,10 +53,15 @@ export interface ContextExportRequest {
   project_identifier: string;
   version_identifier: string;
   selection: ContextExportSelection;
-  format: "zip";
+  format: "zip" | "markdown";
+  markdown_scope?: "all" | "specifications" | "system-definition";
+  markdown_filename?: string;
 }
 
 export interface PackageManifest {
+  export_format?: string;
+  primary_file?: string;
+  companion_directory?: string;
   schema_version: string;
   export_layout?: "hierarchy_documents" | string;
   hierarchy_count?: number;
