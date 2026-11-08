@@ -25,7 +25,7 @@ LEARN MORE
       withErrorHandling(async (options, command) => {
         const formatter = getFormatter(command);
         const current = await context.configStore.load();
-        const envConfig = loadFromEnv();
+        const envConfig = context.configStore.useEnvironment ? loadFromEnv() : {};
         
         // Helper to determine source
         const source = (key: keyof typeof envConfig) => {

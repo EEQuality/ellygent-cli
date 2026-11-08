@@ -84,7 +84,7 @@ export function summarizeResponseBody(body: string, status?: number, contentType
 
 function redactSecrets(value: string): string {
   return value
-    .replace(/elly_pat_[A-Za-z0-9_-]+/g, "<redacted>")
+    .replace(/elly_(?:pat|sb)_[A-Za-z0-9_-]+/g, "<redacted>")
     .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer <redacted>")
     .replace(/(authorization["']?\s*[:=]\s*["']?)[^"',\s}]+/gi, "$1<redacted>")
     .replace(/((?:access|refresh|session|id)?_?token["']?\s*[:=]\s*["']?)[^"',\s}]+/gi, "$1<redacted>")

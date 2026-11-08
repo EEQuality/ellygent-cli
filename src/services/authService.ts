@@ -38,7 +38,8 @@ export class AuthService {
       ...current,
       apiUrl,
       accessToken: trimmedToken,
-      refreshToken: undefined
+      refreshToken: undefined,
+      accessTokenExpiresAt: undefined
     });
 
     return { apiUrl };

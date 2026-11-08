@@ -8,7 +8,7 @@ import type { ConfigKey, EllygentConfig } from "../types/config.js";
 export class ConfigStore {
   private readonly configPath: string;
 
-  constructor(configPath = defaultConfigPath()) {
+  constructor(configPath = defaultConfigPath(), readonly useEnvironment = true) {
     this.configPath = configPath;
   }
 
@@ -18,7 +18,7 @@ export class ConfigStore {
 
   async load(): Promise<EllygentConfig> {
     const fileConfig = await this.loadFromFile();
-    const envConfig = loadFromEnv();
+    const envConfig = this.useEnvironment ? loadFromEnv() : {};
     
     // Merge: file config < env vars (env vars override file)
     return { ...fileConfig, ...envConfig };
@@ -146,6 +146,7 @@ function sanitizeConfig(config: EllygentConfig): EllygentConfig {
     refreshToken: stringOrUndefined(config.refreshToken),
     defaultOrg: stringOrUndefined(config.defaultOrg),
     defaultProject: stringOrUndefined(config.defaultProject),
+    accessTokenExpiresAt: stringOrUndefined(config.accessTokenExpiresAt),
   };
 }
 

@@ -14,8 +14,8 @@ export interface CommandContext {
   clientFactory: ClientFactory;
 }
 
-export function createCommandContext(): CommandContext {
-  const configStore = new ConfigStore();
+export function createCommandContext(configPath?: string): CommandContext {
+  const configStore = new ConfigStore(configPath, !configPath);
   return {
     configStore,
     clientFactory: new ClientFactory(configStore)

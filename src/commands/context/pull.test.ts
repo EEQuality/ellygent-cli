@@ -1,5 +1,7 @@
 import { Command } from "commander";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { SyncService } from "../../services/syncService.js";
+import { MarkdownExportService } from "../../services/markdownExportService.js";
 import { registerPullCommand } from "./pull.js";
 import type { CommandContext } from "../shared.js";
 
@@ -42,6 +44,41 @@ describe("context pull command", () => {
   afterEach(() => {
     process.exitCode = undefined;
     vi.restoreAllMocks();
+  });
+
+  it("uses Markdown export with the actual root-level --format option present", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const markdown = vi.spyOn(MarkdownExportService.prototype, "export").mockResolvedValue({
+      outputPath: "./sandbox.md", report: { status: "complete", limitations: [] },
+      manifest: { version: { identifier: "main", type: "live" } },
+    } as never);
+    const root = new Command().option("-f, --format <type>", "Output format", "json").option("--json");
+    registerPullCommand(root.command("context"), mockContext);
+    await root.parseAsync(["context", "pull", "--project", "sandbox-a", "--format", "markdown", "--out", "./sandbox.md", "--include-traceability", "--json"], { from: "user" });
+    expect(markdown).toHaveBeenCalledWith(expect.objectContaining({ project: "sandbox-a", out: "./sandbox.md", selection: expect.objectContaining({ include_traceability: true }) }));
+    expect(mockClient.downloadContextPackage).not.toHaveBeenCalled();
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  it("uses ReqIF export with the actual root-level --format option present", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const root = new Command().option("-f, --format <type>", "Output format", "json");
+    registerPullCommand(root.command("context"), mockContext);
+    await root.parseAsync(["context", "pull", "--project", "tractor", "--version", "baseline-1", "--format", "reqif", "--out", "./tractor.reqif"], { from: "user" });
+    expect(mockClient.downloadReqIFExport).toHaveBeenCalledWith("tractor", "reqif", "baseline-1", "./tractor.reqif");
+    expect(mockClient.downloadContextPackage).not.toHaveBeenCalled();
+  });
+
+  it("preserves global JSON output while using the default context export", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const sync = vi.spyOn(SyncService.prototype, "sync").mockResolvedValue({
+      targetDir: "./context", manifest: { project: { name: "Sandbox", identifier: "sandbox-a" }, version: { identifier: "main" }, generated_at: "2030-01-01" },
+    } as never);
+    const root = new Command().option("-f, --format <type>", "Output format", "json");
+    registerPullCommand(root.command("context"), mockContext);
+    await root.parseAsync(["context", "pull", "--project", "sandbox-a", "--format", "json"], { from: "user" });
+    expect(sync).toHaveBeenCalledWith(expect.objectContaining({ project: "sandbox-a" }));
+    expect(process.exitCode).toBeUndefined();
   });
 
   it.each(["reqif", "reqifz"])("downloads a saved baseline as %s", async (format) => {

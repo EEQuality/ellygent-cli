@@ -2,6 +2,7 @@
 import { Command } from "commander";
 import chalk from "chalk";
 import { createCommandContext } from "./commands/shared.js";
+import { registerSandboxCommands } from "./commands/sandbox.js";
 import { registerAuthCommands } from "./commands/auth/index.js";
 import { registerContextCommands } from "./commands/context/index.js";
 import { registerConfigCommands } from "./commands/config/index.js";
@@ -20,6 +21,7 @@ program
   .name("ellygent")
   .description("Professional CLI for engineering context discovery, requirements sync, and AI-assisted workflows")
   .version("0.1.1")
+  .option("--config <path>", "Use an isolated config file (ignores ELLYGENT_* environment variables)")
   .option("-f, --format <type>", "Output format: json (default) or markdown/md", "json")
   .option("--json", "Output as JSON (shorthand for --format json)")
   .option("-q, --quiet", "Suppress all output except errors")
@@ -82,6 +84,13 @@ ${chalk.bold("LEARN MORE")}
 `);
 
 const context = createCommandContext();
+
+program.hook("preAction", () => {
+  const configPath = program.opts().config as string | undefined;
+  if (configPath) Object.assign(context, createCommandContext(configPath));
+});
+
+registerSandboxCommands(program, context);
 
 // Register new grouped commands
 registerAuthCommands(program, context);

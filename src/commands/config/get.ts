@@ -41,7 +41,8 @@ LEARN MORE
         }
 
         const config = await context.configStore.load();
-        const value = (config as Record<string, unknown>)[key];
+        const rawValue = (config as Record<string, unknown>)[key];
+        const value = typeof rawValue === "string" && rawValue.startsWith("elly_sb_") ? "<configured>" : rawValue;
         
         if (formatter.format === "json") {
           outputData({ key: rawKey, value: value || null }, formatter);

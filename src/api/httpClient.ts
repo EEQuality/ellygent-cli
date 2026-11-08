@@ -111,6 +111,7 @@ export class HttpClient {
 
     const requestInit: RequestInit = {
       ...init,
+      ...(this.accessToken?.startsWith("elly_sb_") ? { redirect: "error" as const } : {}),
       headers,
       signal: AbortSignal.timeout(this.timeout)
     };

@@ -23,7 +23,7 @@ export async function showAuthStatus(context: CommandContext, command: Command):
   }
 
   const apiUrl = config.apiUrl || "not set";
-  const tokenType = "Personal Access Token";
+  const tokenType = config.accessToken.startsWith("elly_sb_") ? "Read-only sandbox credential" : "Personal Access Token";
 
   if (!config.apiUrl) {
     const statusData = {
@@ -59,6 +59,7 @@ export async function showAuthStatus(context: CommandContext, command: Command):
     authenticated: true,
     apiUrl,
     tokenType,
+    expiresAt: config.accessTokenExpiresAt,
     defaultOrg: config.defaultOrg || "not set",
     defaultProject: config.defaultProject || "not set"
   };

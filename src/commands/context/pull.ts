@@ -121,7 +121,21 @@ IMPORTANT: ReqIF and ReqIFZ exports require a specific project version.
           "`ellygent config set default-project <identifier>`"
         );
         const version = options.version || "main";
-        const format = (options.format || "context").toLowerCase();
+        // Commander may consume a child's --format on the root command because
+        // the CLI also defines that name for output formatting. Recover an explicit
+        // export choice only when the local option is still its default.
+        let exportFormat = options.format || "context";
+        if (command.getOptionValueSource("format") === "default") {
+          for (let parent = command.parent; parent; parent = parent.parent) {
+            const inherited = parent.opts().format as string | undefined;
+            if (parent.getOptionValueSource("format") === "cli" && inherited &&
+                ["context", "markdown", "md", "reqif", "reqifz"].includes(inherited.toLowerCase())) {
+              exportFormat = inherited;
+              break;
+            }
+          }
+        }
+        const format = exportFormat.toLowerCase();
 
         // Validate format
         const validFormats = ["context", "markdown", "md", "reqif", "reqifz"];

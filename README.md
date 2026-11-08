@@ -511,3 +511,34 @@ src/
   types/      Shared TypeScript contracts
   utils/      Terminal/workspace helpers
 ```
+
+## Connect an anonymous sandbox
+
+Use the existing installers above, or build this checkout locally. In the sandbox workspace, select **Connect CLI**. Keep that browser session open and run:
+
+```bash
+ellygent --config .ellygent-sandbox.json sandbox connect --project <sandbox-project-identifier> --api-url https://www.ellygent.com
+```
+
+Use the server URL shown by your sandbox; local development supports `http://localhost:8000`. Pairing requires HTTPS elsewhere. Open the printed verification URL in the browser holding your sandbox session, enter the displayed short code, check the project, and approve read-only access. The CLI waits at the server's polling interval and prints the credential expiration after approval. It never prints the bearer credential or private device code.
+
+`--config` selects a separate credential file for **all** commands and ignores `ELLYGENT_*` environment overrides. Pairing refuses the normal default config file and any file that already contains a credential, so it cannot silently replace your PAT. Keep this file outside version control; it contains a secret and is saved with mode `0600`. Use the same file for existing commands:
+
+```bash
+ellygent --config .ellygent-sandbox.json auth status
+ellygent --config .ellygent-sandbox.json context projects
+ellygent --config .ellygent-sandbox.json context versions
+ellygent --config .ellygent-sandbox.json context inspect --format json
+ellygent --config .ellygent-sandbox.json context pull --include-traceability
+ellygent --config .ellygent-sandbox.json context pull --format markdown --out ./sandbox.md --include-traceability
+```
+
+Project and organization defaults come from the pairing response. Existing context inspection and downloads expose system definitions, specifications, requirements, relationships and traceability through the existing context package format. JSON/Markdown output and other supported exports retain their existing command options. Server authorization restricts this credential to reads of exactly the paired project; writes, administration, AI execution, agents and credential creation are unavailable.
+
+The credential expires no later than the sandbox's seven-day lifetime. Expiration, deletion, browser revocation, or conversion to a registered project invalidates it immediately on the server. Use **Disconnect CLI** in the sandbox browser to revoke server access. To remove the local credential afterward:
+
+```bash
+ellygent --config .ellygent-sandbox.json auth logout
+```
+
+Local logout only removes the local copy; it does not revoke a copied credential. Temporary CLI connectivity does not extend data retention. Register through the sandbox's existing preservation flow to keep your work, then use normal `auth login --token <PAT>` for your registered account. A sandbox credential (`elly_sb_`) is temporary and project scoped; normal PAT authentication (`elly_pat_`) is unchanged. Public publication is a separate, explicit opt-in and never extends sandbox CLI authorization.

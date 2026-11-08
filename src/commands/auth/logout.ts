@@ -25,11 +25,12 @@ LEARN MORE
           return;
         }
         
-        const authType = "Personal Access Token";
+        const authType = config.accessToken.startsWith("elly_sb_") ? "Read-only sandbox credential (local copy only)" : "Personal Access Token";
 
         // Clear auth-related fields
         await context.configStore.set("accessToken", "");
         await context.configStore.set("refreshToken", "");
+        await context.configStore.set("accessTokenExpiresAt", "");
         
         outputSuccess(`Logged out successfully (${authType})`, formatter);
         outputInfo("Run 'ellygent auth login --token <PAT>' to re-authenticate", formatter);
