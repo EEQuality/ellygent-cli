@@ -1,7 +1,16 @@
 import { Command } from "commander";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { registerPullCommand } from "./pull.js";
 import type { CommandContext } from "../shared.js";
+
+// Commander appends addHelpText only when rendering help, not in helpInformation().
+function renderedHelp(command: Command | undefined): string {
+  if (!command) throw new Error("Pull command was not registered");
+  let help = "";
+  command.configureOutput({ writeOut: (text) => { help += text; } });
+  command.outputHelp();
+  return help;
+}
 
 describe("context pull command", () => {
   let command: Command;
@@ -30,6 +39,41 @@ describe("context pull command", () => {
     registerPullCommand(command, mockContext);
   });
 
+  afterEach(() => {
+    process.exitCode = undefined;
+    vi.restoreAllMocks();
+  });
+
+  it.each(["reqif", "reqifz"])("downloads a saved baseline as %s", async (format) => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    await command.parseAsync([
+      "pull", "--project", "tractor", "--version", "baseline-1",
+      "--format", format, "--out", `./tractor.${format}`,
+    ], { from: "user" });
+
+    expect(mockClient.downloadReqIFExport).toHaveBeenCalledWith(
+      "tractor", format, "baseline-1", `./tractor.${format}`,
+    );
+    expect(mockClient.downloadContextPackage).not.toHaveBeenCalled();
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  it.each([
+    ["reqif", []],
+    ["reqifz", ["--version", "MAIN"]],
+  ])("rejects live %s export before creating an API client", async (format, versionArgs) => {
+    const stderr = vi.spyOn(console, "error").mockImplementation(() => {});
+    await command.parseAsync([
+      "pull", "--project", "tractor", "--format", format,
+      "--out", `./tractor.${format}`, ...versionArgs,
+    ], { from: "user" });
+
+    expect(process.exitCode).toBe(1);
+    expect(stderr.mock.calls.flat().join(" ")).toContain("ReqIF export requires a specific project version");
+    expect(mockContext.clientFactory.contextClient).not.toHaveBeenCalled();
+    expect(mockClient.downloadReqIFExport).not.toHaveBeenCalled();
+  });
+
   it("registers pull command with required options", () => {
     const pull = command.commands.find((cmd) => cmd.name() === "pull");
     expect(pull).toBeDefined();
@@ -45,7 +89,7 @@ describe("context pull command", () => {
 
   it("documents ReqIF version requirement in help text", () => {
     const pull = command.commands.find((cmd) => cmd.name() === "pull");
-    const help = pull?.helpInformation() || "";
+    const help = renderedHelp(pull);
 
     expect(help).toContain("reqif");
     expect(help).toContain("reqifz");
@@ -55,7 +99,7 @@ describe("context pull command", () => {
 
   it("shows ReqIF export examples in help text", () => {
     const pull = command.commands.find((cmd) => cmd.name() === "pull");
-    const help = pull?.helpInformation() || "";
+    const help = renderedHelp(pull);
 
     expect(help).toContain("--format reqif");
     expect(help).toContain("--format reqifz");
@@ -77,7 +121,7 @@ describe("context pull command", () => {
 
   it("documents that --out is required for ReqIF exports", () => {
     const pull = command.commands.find((cmd) => cmd.name() === "pull");
-    const help = pull?.helpInformation() || "";
+    const help = renderedHelp(pull);
 
     // Examples should show --out with ReqIF formats
     const reqifExampleMatch = help.match(/--format reqif.*--out/s);
@@ -103,9 +147,9 @@ describe("context pull command", () => {
 
   it("shows warning about creating versions first", () => {
     const pull = command.commands.find((cmd) => cmd.name() === "pull");
-    const help = pull?.helpInformation() || "";
+    const help = renderedHelp(pull);
 
-    expect(help).toContain("Create a version first");
+    expect(help).toContain("Create a version in the web app");
   });
 });
 
@@ -124,7 +168,7 @@ describe("context pull command - ReqIF format validation", () => {
     registerPullCommand(command, mockContext);
 
     const pull = command.commands.find((cmd) => cmd.name() === "pull");
-    const help = pull?.helpInformation() || "";
+    const help = renderedHelp(pull);
 
     // Should document the restriction
     expect(help).toContain("not allowed for ReqIF formats");
@@ -145,7 +189,7 @@ describe("context pull command - ReqIF format validation", () => {
     registerPullCommand(command, mockContext);
 
     const pull = command.commands.find((cmd) => cmd.name() === "pull");
-    const help = pull?.helpInformation() || "";
+    const help = renderedHelp(pull);
 
     // Help should guide users on the correct usage
     expect(help.toLowerCase()).toContain("version");
@@ -168,7 +212,7 @@ describe("context pull command - format option", () => {
     registerPullCommand(command, mockContext);
 
     const pull = command.commands.find((cmd) => cmd.name() === "pull");
-    const help = pull?.helpInformation() || "";
+    const help = renderedHelp(pull);
 
     expect(help).toContain("context");
   });
@@ -187,7 +231,7 @@ describe("context pull command - format option", () => {
     registerPullCommand(command, mockContext);
 
     const pull = command.commands.find((cmd) => cmd.name() === "pull");
-    const help = pull?.helpInformation() || "";
+    const help = renderedHelp(pull);
 
     expect(help).toContain("markdown");
   });
@@ -206,7 +250,7 @@ describe("context pull command - format option", () => {
     registerPullCommand(command, mockContext);
 
     const pull = command.commands.find((cmd) => cmd.name() === "pull");
-    const help = pull?.helpInformation() || "";
+    const help = renderedHelp(pull);
 
     expect(help).toContain("reqif");
   });
@@ -225,7 +269,7 @@ describe("context pull command - format option", () => {
     registerPullCommand(command, mockContext);
 
     const pull = command.commands.find((cmd) => cmd.name() === "pull");
-    const help = pull?.helpInformation() || "";
+    const help = renderedHelp(pull);
 
     expect(help).toContain("reqifz");
   });
