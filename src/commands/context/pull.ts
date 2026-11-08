@@ -3,7 +3,7 @@ import { MarkdownExportService } from "../../services/markdownExportService.js";
 import { SyncService } from "../../services/syncService.js";
 import type { CommandContext } from "../shared.js";
 import { getFormatter, requireOption, spin, withErrorHandling } from "../shared.js";
-import { outputSuccess, outputInfo } from "../../utils/formatter.js";
+import { outputSuccess, outputInfo, outputData } from "../../utils/formatter.js";
 
 interface PullOptions {
   project?: string;
@@ -114,6 +114,8 @@ IMPORTANT: ReqIF and ReqIFZ exports require a specific project version.
     .action(
       withErrorHandling(async (options: PullOptions, command) => {
         const formatter = getFormatter(command);
+        // --format selects the export as well as presentation; --json is explicit.
+        const json = Boolean(command.optsWithGlobals().json) || formatter.format === "json";
         const config = await context.configStore.load();
         const project = requireOption(
           options.project || config.defaultProject,
@@ -174,6 +176,11 @@ IMPORTANT: ReqIF and ReqIFZ exports require a specific project version.
             client.downloadReqIFExport(project, format as "reqif" | "reqifz", version, outputPath)
           );
 
+          if (json) {
+            outputData({ status: "success", export_format: format, output_path: outputPath,
+              requested_project_identifier: project, requested_version_identifier: version }, { format: "json" });
+            return;
+          }
           outputSuccess(`${format.toUpperCase()} exported to ${outputPath}`, formatter);
           outputInfo(`${project}@${version}`, formatter);
           return;
@@ -195,6 +202,14 @@ IMPORTANT: ReqIF and ReqIFZ exports require a specific project version.
               },
             })
           );
+          if (json) {
+            outputData({ status: result.report.status === "partial" ? "partial" : "success",
+              export_format: "markdown", output_path: result.outputPath,
+              project: result.manifest.project, version: result.manifest.version,
+              manifest: result.manifest, report: result.report }, { format: "json" });
+            if (result.report.status === "partial") process.exitCode = 2;
+            return;
+          }
           if (result.report.status === "partial") {
             outputInfo(`Partial Markdown export written to ${result.outputPath}. See export-report.md.`, formatter);
             for (const issue of result.report.unavailable_assets) outputInfo(`${issue.reference}: ${issue.reason}`, formatter);
@@ -223,6 +238,12 @@ IMPORTANT: ReqIF and ReqIFZ exports require a specific project version.
           })
         );
 
+        if (json) {
+          outputData({ status: "success", export_format: "context", output_path: result.targetDir,
+            project: result.manifest.project, version: result.manifest.version,
+            manifest: result.manifest }, { format: "json" });
+          return;
+        }
         outputSuccess(`Context pulled to ${result.targetDir}`, formatter);
         outputInfo(`${result.manifest.project.name} (${result.manifest.project.identifier})`, formatter);
         outputInfo(`Version ${result.manifest.version.identifier} - generated ${result.manifest.generated_at}`, formatter);

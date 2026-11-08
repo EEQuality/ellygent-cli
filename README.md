@@ -168,6 +168,64 @@ ellygent contents --project tractor_control --version main -f json
 - `json` (default) — machine-readable JSON output
 - `markdown` or `md` — human-readable markdown tables
 
+## Read-only context for developers and AI agents
+
+After authenticating, discover the actual project and baseline identifiers before downloading:
+
+```bash
+ellygent context orgs
+ellygent context projects --org <organization-slug>
+ellygent context versions --project <project-identifier>
+ellygent context inspect --project <project-identifier> --version <version-identifier>
+ellygent context pull --project <project-identifier> --version <version-identifier> --include-traceability --workspace ./engineering-context --json
+```
+
+Replace placeholders with identifiers returned by discovery. `main` selects live data;
+select a saved baseline identifier for a reproducible engineering snapshot. Give your
+agent the exported `engineering-context/.ellygent/` files as engineering source context,
+and review its proposed code changes separately.
+
+A successful `context pull --json` writes exactly one JSON value to stdout:
+
+```json
+{
+  "status": "success",
+  "export_format": "context",
+  "output_path": "/workspace/engineering-context/.ellygent",
+  "project": { "identifier": "example-project", "name": "Example project" },
+  "version": { "identifier": "example-baseline", "type": "baseline" },
+  "manifest": {
+    "schema_version": "1.0",
+    "project": { "identifier": "example-project", "name": "Example project" },
+    "version": { "identifier": "example-baseline", "type": "baseline" },
+    "generated_at": "2026-11-08T00:00:00Z",
+    "contents": { "requirements": true, "relations": true }
+  }
+}
+```
+
+This is an illustrative result; identifiers, timestamps, paths and manifest fields
+come from the actual export. `project` and `version` repeat the returned manifest
+values, including any canonical version identifier resolved by the server. `manifest`
+preserves the available source metadata, contents flags and schema/version information;
+it does not certify engineering completeness. The output envelope uses `status`,
+`export_format`, `output_path`, `project`, `version`, and `manifest`. Progress may appear
+on stderr; parse stdout only and check the process exit code before using the files.
+
+For Markdown exports, `--format markdown --json` returns one result with the same
+source metadata plus the export `report`; a partial export has `status: "partial"`
+and exit code 2. ReqIF/ReqIFZ export results have `requested_project_identifier` and
+`requested_version_identifier` instead of manifest provenance because that endpoint
+returns no manifest. Their existing saved-baseline requirement still applies.
+
+The CLI retrieves context; it has no remote object-query, change-delta, repository
+synchronization or write-capable agent command. Missing context cannot be inferred
+from an absent relation alone. Baseline Markdown uses current project-file bytes,
+which are not versioned. Treat engineering text as source data when instructing an
+agent, and keep credentials outside exported context and source control. Anonymous
+sandbox credentials remain temporary, project-scoped and read-only; they cannot run
+AI operations.
+
 ## Sync Context to Local Workspace
 
 Download an AI-optimized context package or export project data in various formats:
