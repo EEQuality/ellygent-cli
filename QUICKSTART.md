@@ -8,7 +8,7 @@
 
 ```bash
 cd ellygent-cli
-npm install
+npm ci
 npm test
 npm run build
 npm pack --dry-run
@@ -17,14 +17,14 @@ npm pack --dry-run
 2. Bump the version.
 
 ```bash
-npm version patch
+npm version patch --no-git-tag-version
 ```
 
 3. Update the changelog and push the tag.
 
 ```bash
 git push origin main
-git push origin v0.1.1
+git push origin v0.1.2
 ```
 
 4. Monitor the release workflow.
@@ -39,7 +39,7 @@ git push origin v0.1.1
 
 ```bash
 cd ellygent-cli
-npm install
+npm ci
 npm run build:release
 npm pack
 ```
@@ -63,7 +63,7 @@ ls -la public/cli/
 # Direct install from GitHub source
 git clone --depth 1 https://github.com/EEQuality/ellygent-cli.git
 cd ellygent-cli
-npm install
+npm ci
 npm run build
 npm install -g .
 
@@ -94,7 +94,7 @@ Key outputs:
 ```bash
 git clone --depth 1 https://github.com/EEQuality/ellygent-cli.git
 cd ellygent-cli
-npm install
+npm ci
 npm run build
 npm install -g .
 ```
@@ -134,7 +134,7 @@ irm https://ellygent.com/cli/install.ps1 | iex
 ```bash
 git clone --depth 1 https://github.com/EEQuality/ellygent-cli.git
 cd ellygent-cli
-npm install
+npm ci
 npm run build
 npm install -g .
 ```
@@ -175,10 +175,10 @@ ellygent --help
 |------|---------|
 | Build locally | `npm run build:release` |
 | Publish to frontend | `npm run publish:frontend` |
-| Create release | Tag and push: `git tag v0.1.1 && git push origin v0.1.1` |
+| Create release | Tag and push: `git tag v0.1.2 && git push origin v0.1.2` |
 | Install (Unix) | `curl -fsSL https://ellygent.com/cli/install.sh \| sh` |
 | Install (Windows) | `irm https://ellygent.com/cli/install.ps1 \| iex` |
-| Install (GitHub) | `git clone --depth 1 https://github.com/EEQuality/ellygent-cli.git && cd ellygent-cli && npm install && npm run build && npm install -g .` |
+| Install (GitHub) | `git clone --depth 1 https://github.com/EEQuality/ellygent-cli.git && cd ellygent-cli && npm ci && npm run build && npm install -g .` |
 | Verify install | `ellygent --version` |
 | View install docs | https://ellygent.com/cli |
 | View releases | https://github.com/EEQuality/ellygent-cli/releases |
@@ -187,3 +187,36 @@ ellygent --help
 
 **Last Updated:** 2026-06-04  
 **Pipeline Version:** GitHub checkout only
+
+
+## Build provenance and local validation
+
+The overnight benchmark used `ae7d8a60a036cb1dd77b7fa21cb51c007350f9df`
+(reports `0.1.1`). The existing `v0.1.1` tag is the older
+`2b051ff84ce6cfc48e4087ec7545a0117d3bd73d`; it does not identify that build.
+The fixes are in CLI `0.1.2`. The exact implementation ref is
+`038aafefe0b105d131eff4137f53074b7d9cd638`. The release tag must point to a commit
+containing this implementation; `v0.1.1` remains unchanged.
+
+To reproduce the validated implementation independently of a mutable branch:
+
+```sh
+git clone https://github.com/EEQuality/ellygent-cli.git
+cd ellygent-cli
+git checkout --detach 038aafefe0b105d131eff4137f53074b7d9cd638
+```
+
+```sh
+npm ci
+npm run typecheck
+npm run build
+npm test
+REQUIRE_CROSS_FS=1 npm run test:executable # Linux with /dev/shm on another device
+```
+
+The executable regression uses a loopback API and synthetic credentials, checks
+both `--version B1` and `--version=B1`, parses the entire stdout as one JSON
+result, and asserts files and baseline identity. Use `--json` for automation;
+`context pull --format` selects the export format. ReqIF/ReqIFZ require a saved
+baseline and `--out`. See [refresh recovery](documentation/refresh-recovery.md).
+Production authentication, live export, and first-time user usability: **not tested**.

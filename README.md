@@ -41,7 +41,7 @@ ellygent whoami
 ```bash
 git clone --depth 1 https://github.com/EEQuality/ellygent-cli.git
 cd ellygent-cli
-npm install
+npm ci
 npm run build
 npm install -g .
 ```
@@ -49,9 +49,9 @@ npm install -g .
 ### Install a specific GitHub ref
 
 ```bash
-git clone --depth 1 --branch v0.1.1 https://github.com/EEQuality/ellygent-cli.git
+git clone --depth 1 --branch v0.1.2 https://github.com/EEQuality/ellygent-cli.git
 cd ellygent-cli
-npm install
+npm ci
 npm run build
 npm install -g .
 ```
@@ -65,7 +65,7 @@ For local development:
 ```bash
 git clone https://github.com/EEQuality/ellygent-cli.git
 cd ellygent-cli
-npm install
+npm ci
 npm run build
 npm link
 ```
@@ -552,7 +552,7 @@ Find your PowerShell profile path with `$PROFILE`, then add the source line.
 ## Development
 
 ```bash
-npm install
+npm ci
 npm run typecheck
 npm run build
 npm link  # for local testing
@@ -600,3 +600,38 @@ ellygent --config .ellygent-sandbox.json auth logout
 ```
 
 Local logout only removes the local copy; it does not revoke a copied credential. Temporary CLI connectivity does not extend data retention. Register through the sandbox's existing preservation flow to keep your work, then use normal `auth login --token <PAT>` for your registered account. A sandbox credential (`elly_sb_`) is temporary and project scoped; normal PAT authentication (`elly_pat_`) is unchanged. Public publication is a separate, explicit opt-in and never extends sandbox CLI authorization.
+
+
+## Build provenance and local validation
+
+The overnight benchmark used `ae7d8a60a036cb1dd77b7fa21cb51c007350f9df`
+(reports `0.1.1`). The existing `v0.1.1` tag is the older
+`2b051ff84ce6cfc48e4087ec7545a0117d3bd73d`; it does not identify that build.
+The fixes are in CLI `0.1.2`. The exact implementation ref is
+`038aafefe0b105d131eff4137f53074b7d9cd638`. The release tag must point to a commit
+containing this implementation; `v0.1.1` remains unchanged.
+
+To reproduce the validated implementation independently of a mutable branch:
+
+```sh
+git clone https://github.com/EEQuality/ellygent-cli.git
+cd ellygent-cli
+git checkout --detach 038aafefe0b105d131eff4137f53074b7d9cd638
+```
+
+```sh
+npm ci
+npm run typecheck
+npm run build
+npm test
+REQUIRE_CROSS_FS=1 npm run test:executable # Linux with /dev/shm on another device
+```
+
+The executable regression uses a loopback API and synthetic credentials, checks
+both `--version B1` and `--version=B1`, parses the entire stdout as one JSON
+result, and asserts files and baseline identity. Use `--json` for automation;
+`context pull --format` selects the export format. ReqIF/ReqIFZ require a saved
+baseline and `--out`. See [refresh recovery](documentation/refresh-recovery.md).
+Production authentication, live export, and first-time user usability: **not tested**.
+
+Local acceptance evidence and limitations: [benchmark blocker verification](documentation/benchmark-blockers-verification.md).
