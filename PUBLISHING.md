@@ -85,3 +85,28 @@ A faulty public release should be superseded by a new patch release; do not move
 published tags. Prefer a previously verified explicit ref while investigating.
 No production authentication, live export, or first-time usability validation is
 implied by local fixtures or GitHub Actions.
+
+
+### Verify the installed artifact
+
+For a tag, pass the version to the installer process:
+
+```sh
+curl -fsSL https://ellygent.com/cli/install.sh | VERSION=v0.1.2 sh
+```
+
+For an exact commit, use explicit Git checkout and check `git rev-parse HEAD`
+(see the full verified SHA in README). On current main and subsequent releases
+that contain the installed-artifact check, build that checkout and run:
+
+```sh
+npm run test:installed
+```
+
+This installs a packed artifact into an isolated temporary prefix, compares its
+JavaScript with the built checkout by SHA-256, and runs the fixture regressions
+against the installed executable. It verifies B1 selection, exported files,
+single JSON stdout and refresh failure preservation. `--version` alone cannot
+identify a build: both historical benchmark/tag builds reported `0.1.1`.
+The release publication job depends on all verification, including this installed
+artifact check, for tag pushes and manual dispatch as well as PR/main checks.

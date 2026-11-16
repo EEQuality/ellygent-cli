@@ -34,8 +34,12 @@ jobs:
       - run: npm run test:executable
         env:
           REQUIRE_CROSS_FS: "1"
+      - run: npm run test:installed
+        env:
+          REQUIRE_CROSS_FS: "1"
 
   package-and-publish:
+    # Runs for every trigger, including tags and workflow_dispatch.
     needs: verify
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     name: Publish GitHub checkout installation assets
@@ -132,6 +136,22 @@ jobs:
             cd ellygent-cli
             npm ci
             npm run build
+            npm install -g .
+            ```
+
+            ### Check out this exact verified commit
+
+            A version string alone does not identify a build (historical builds
+            both reported 0.1.1). Use Git for an exact commit:
+
+            ```bash
+            git clone https://github.com/EEQuality/ellygent-cli.git
+            cd ellygent-cli
+            git checkout --detach ${{ github.sha }}
+            test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+            npm ci
+            npm run build
+            npm run test:installed
             npm install -g .
             ```
 

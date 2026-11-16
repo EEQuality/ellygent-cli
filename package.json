@@ -25,7 +25,8 @@
     "prepack": "npm run build",
     "build:release": "npm run build",
     "publish:frontend": "node scripts/publish-to-frontend.js",
-    "test:executable": "node scripts/executable-regressions.mjs"
+    "test:executable": "node scripts/executable-regressions.mjs",
+    "test:installed": "node scripts/installed-regressions.mjs"
   },
   "engines": {
     "node": ">=20.0.0"
