@@ -160,8 +160,14 @@ ellygent whoami
 # List projects
 ellygent projects --org my-org
 
-# Download context
-ellygent sync --project project-id --version v1.0
+# Inspect a saved baseline (replace demo and B1 with your identifiers)
+ellygent context inspect --project demo --version B1 --json
+
+# Download that baseline
+ellygent context pull --project demo --version B1 --workspace ./engineering-context --json
+
+# Equivalent spelling; run in a separate workspace or refresh the same export
+ellygent context pull --project demo --version=B1 --workspace ./engineering-context --json
 
 # Help
 ellygent --help
