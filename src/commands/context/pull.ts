@@ -2,7 +2,7 @@ import type { Command } from "commander";
 import { MarkdownExportService } from "../../services/markdownExportService.js";
 import { SyncService } from "../../services/syncService.js";
 import type { CommandContext } from "../shared.js";
-import { getFormatter, requireOption, spin, withErrorHandling } from "../shared.js";
+import { getEffectiveOptions, getFormatter, requireOption, spin, withErrorHandling } from "../shared.js";
 import { outputSuccess, outputInfo, outputData } from "../../utils/formatter.js";
 
 interface PullOptions {
@@ -115,13 +115,14 @@ IMPORTANT: ReqIF and ReqIFZ exports require a specific project version.
       withErrorHandling(async (options: PullOptions, command) => {
         const formatter = getFormatter(command);
         // --format selects the export as well as presentation; --json is explicit.
-        const json = Boolean(command.optsWithGlobals().json) || formatter.format === "json";
+        const json = Boolean(getEffectiveOptions(command).json) || formatter.format === "json";
         const config = await context.configStore.load();
         const project = requireOption(
           options.project || config.defaultProject,
           "--project",
           "`ellygent config set default-project <identifier>`"
         );
+        if (options.version !== undefined && !options.version.trim()) throw new Error("--version requires a nonempty baseline identifier");
         const version = options.version || "main";
         // Commander may consume a child's --format on the root command because
         // the CLI also defines that name for output formatting. Recover an explicit
@@ -157,7 +158,7 @@ IMPORTANT: ReqIF and ReqIFZ exports require a specific project version.
               "Create or select a project version and retry with --version <version-identifier>\n" +
               "\n" +
               "Example:\n" +
-              `  ellygent pull --project ${project} --version <version> --format ${format} --out ./project.${format}`
+              `  ellygent context pull --project ${project} --version <version> --format ${format} --out ./project.${format}`
             );
           }
         }

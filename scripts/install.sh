@@ -7,7 +7,7 @@
 #   wget -qO- https://ellygent.com/cli/install.sh | sh
 #
 # Optional:
-#   VERSION=v0.1.1 curl -fsSL https://ellygent.com/cli/install.sh | sh
+#   curl -fsSL https://ellygent.com/cli/install.sh | VERSION=v0.1.2 sh
 
 set -e
 

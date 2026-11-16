@@ -5,7 +5,7 @@
 #   irm https://ellygent.com/cli/install.ps1 | iex
 #
 # Optional:
-#   $env:VERSION = "v0.1.1"; irm https://ellygent.com/cli/install.ps1 | iex
+#   $env:VERSION = "v0.1.2"; irm https://ellygent.com/cli/install.ps1 | iex
 
 param(
     [string]$Version = "main"

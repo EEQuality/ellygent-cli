@@ -1,20 +1,43 @@
 name: CLI Release Pipeline
 
 on:
+  pull_request:
   push:
+    branches: [main]
     tags:
       - "v*.*.*"
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to release (e.g., 0.1.1)"
+        description: "Version to release (e.g., 0.1.2)"
         required: true
 
 permissions:
   contents: write
 
 jobs:
+  verify:
+    name: Release-blocking local regressions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:executable
+        env:
+          REQUIRE_CROSS_FS: "1"
+
   package-and-publish:
+    needs: verify
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     name: Publish GitHub checkout installation assets
     runs-on: ubuntu-latest
 
@@ -34,25 +57,37 @@ jobs:
       - name: Build TypeScript
         run: npm run build
 
-      - name: Checkout frontend repository
-        uses: actions/checkout@v4
-        with:
-          repository: EEQuality/ellygent-frontend
-          path: ellygent-frontend
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validate release identity
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          test "$GITHUB_REF" = "refs/tags/v$PACKAGE_VERSION"
+          if [ -n "$REQUESTED_VERSION" ]; then test "$REQUESTED_VERSION" = "$PACKAGE_VERSION"; fi
+          test "$(node dist/index.js --version)" = "$PACKAGE_VERSION"
+
+      - name: Prepare installer bundle directory
+        run: mkdir -p "$RUNNER_TEMP/ellygent-installer-bundle"
 
       - name: Publish frontend download bundle
         run: npm run publish:frontend
         env:
-          FRONTEND_ROOT: ${{ github.workspace }}/ellygent-frontend
+          FRONTEND_ROOT: ${{ runner.temp }}/ellygent-installer-bundle
+
+      - name: Verify installer artifacts
+        run: |
+          test -s "$RUNNER_TEMP/ellygent-installer-bundle/public/cli/install.sh"
+          test -s "$RUNNER_TEMP/ellygent-installer-bundle/public/cli/install.ps1"
+          node -e 'const fs = require("fs"); const p = require("./package.json"); const s = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/ellygent-installer-bundle/public/cli/distribution-summary.json")); if (s.version !== p.version || s.files.installers !== 2) process.exit(1);'
 
       - name: Upload frontend download bundle
         uses: actions/upload-artifact@v4
         with:
           name: frontend-cli-installers
           path: |
-            ellygent-frontend/public/cli/
+            ${{ runner.temp }}/ellygent-installer-bundle/public/cli/
           retention-days: 7
+          if-no-files-found: error
 
       - id: extract_version
         run: |
@@ -67,6 +102,17 @@ jobs:
           body: |
             ## Ellygent CLI v${{ steps.extract_version.outputs.version }}
 
+            Fixes named-baseline parsing for spaced/equal flag forms and preserves
+            the last good context export during refresh failures. Context promotion
+            is a multi-step swap with rollback and documented interruption recovery.
+
+            Release gates include the full suite and executable fixture regressions,
+            real Linux cross-filesystem refresh, checksum preservation on injected
+            failures, selected baseline and output artifact assertions.
+
+            Production authentication, live export, first-time usability and
+            Windows/macOS filesystem behavior are not tested by these fixture gates.
+
             This release is distributed directly from GitHub source.
 
             ### Install latest from GitHub
@@ -74,7 +120,7 @@ jobs:
             ```bash
             git clone --depth 1 https://github.com/EEQuality/ellygent-cli.git
             cd ellygent-cli
-            npm install
+            npm ci
             npm run build
             npm install -g .
             ```
@@ -84,7 +130,7 @@ jobs:
             ```bash
             git clone --depth 1 --branch v${{ steps.extract_version.outputs.version }} https://github.com/EEQuality/ellygent-cli.git
             cd ellygent-cli
-            npm install
+            npm ci
             npm run build
             npm install -g .
             ```
@@ -105,7 +151,7 @@ jobs:
 
             **Version-pinned installer script:**
             ```bash
-            VERSION=v${{ steps.extract_version.outputs.version }} curl -fsSL https://ellygent.com/cli/install.sh | sh
+            curl -fsSL https://ellygent.com/cli/install.sh | VERSION=v${{ steps.extract_version.outputs.version }} sh
             ```
 
             ### Documentation
@@ -113,6 +159,13 @@ jobs:
             - [Installation Guide](https://ellygent.com/cli)
             - [Getting Started](https://ellygent.com/cli/docs/getting-started)
             - [Full Documentation](https://github.com/EEQuality/ellygent-cli#readme)
+          tag_name: v${{ steps.extract_version.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          files: |
+            ${{ runner.temp }}/ellygent-installer-bundle/public/cli/install.sh
+            ${{ runner.temp }}/ellygent-installer-bundle/public/cli/install.ps1
+            ${{ runner.temp }}/ellygent-installer-bundle/public/cli/distribution-summary.json
+          fail_on_unmatched_files: true
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

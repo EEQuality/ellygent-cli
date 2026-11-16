@@ -59,7 +59,7 @@ Exporting ReqIF from MAIN is not allowed.
 Create or select a project version and retry with --version <version-identifier>
 
 Example:
-  ellygent pull --project <project> --version <version> --format reqif --out ./project.reqif
+  ellygent context pull --project <project> --version <version> --format reqif --out ./project.reqif
 ```
 
 **Rationale**: Clear, actionable error messages guide users to the correct usage pattern.
@@ -133,22 +133,22 @@ When exporting ReqIF for a specific version, the backend **shall**:
 
 ### Valid - ReqIF export with specific version
 ```bash
-ellygent pull --project tractor_control --version baseline-1.0.0 --format reqif --out ./tractor.reqif
+ellygent context pull --project tractor_control --version baseline-1.0.0 --format reqif --out ./tractor.reqif
 ```
 
 ### Valid - ReqIFZ export with specific version
 ```bash
-ellygent pull --project safety_system --version v2.1.0 --format reqifz --out ./safety.reqifz
+ellygent context pull --project safety_system --version v2.1.0 --format reqifz --out ./safety.reqifz
 ```
 
 ### Valid - Context export from MAIN (allowed)
 ```bash
-ellygent pull --project tractor_control --version main --format context
+ellygent context pull --project tractor_control --version main --format context
 ```
 
 ### Valid - Markdown export from MAIN (allowed)
 ```bash
-ellygent pull --project tractor_control --version main --format markdown --out ./tractor.md
+ellygent context pull --project tractor_control --version main --format markdown --spec functional_requirements --out ./tractor.md
 ```
 
 ---
@@ -157,19 +157,19 @@ ellygent pull --project tractor_control --version main --format markdown --out .
 
 ### Invalid - ReqIF export without version
 ```bash
-ellygent pull --project tractor_control --format reqif --out ./tractor.reqif
+ellygent context pull --project tractor_control --format reqif --out ./tractor.reqif
 ```
 **Error**: ReqIF export requires a specific project version.
 
 ### Invalid - ReqIF export from MAIN
 ```bash
-ellygent pull --project tractor_control --version MAIN --format reqif --out ./tractor.reqif
+ellygent context pull --project tractor_control --version MAIN --format reqif --out ./tractor.reqif
 ```
 **Error**: Exporting ReqIF from MAIN is not allowed.
 
 ### Invalid - ReqIF export from main (lowercase)
 ```bash
-ellygent pull --project safety_system --version main --format reqif --out ./safety.reqif
+ellygent context pull --project safety_system --version main --format reqif --out ./safety.reqif
 ```
 **Error**: Exporting ReqIF from MAIN is not allowed.
 

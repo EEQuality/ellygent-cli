@@ -1,6 +1,6 @@
 {
   "name": "@ellygent/cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Ellygent command line tools for downloading AI-optimized engineering context packages.",
   "type": "module",
   "bin": {
@@ -24,7 +24,8 @@
     "prepare": "npm run build",
     "prepack": "npm run build",
     "build:release": "npm run build",
-    "publish:frontend": "node scripts/publish-to-frontend.js"
+    "publish:frontend": "node scripts/publish-to-frontend.js",
+    "test:executable": "node scripts/executable-regressions.mjs"
   },
   "engines": {
     "node": ">=20.0.0"

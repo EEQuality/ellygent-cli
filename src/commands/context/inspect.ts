@@ -40,6 +40,7 @@ LEARN MORE
           "--project",
           "`ellygent config set default-project <identifier>`"
         );
+        if (options.version !== undefined && !options.version.trim()) throw new Error("--version requires a nonempty baseline identifier");
         const version = options.version || "main";
         const client = await context.clientFactory.contextClient();
         const contents = await spin("Loading context contents", () => 

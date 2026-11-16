@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { readFileSync } from "node:fs";
 import chalk from "chalk";
-import { createCommandContext } from "./commands/shared.js";
+import { createCommandContext, getEffectiveOptions } from "./commands/shared.js";
 import { registerSandboxCommands } from "./commands/sandbox.js";
 import { registerAuthCommands } from "./commands/auth/index.js";
 import { registerContextCommands } from "./commands/context/index.js";
@@ -16,11 +17,13 @@ import { registerSyncCommand as registerLegacySync } from "./commands/sync.js";
 import { registerConfigCommand as registerLegacyConfig } from "./commands/config.js";
 
 const program = new Command();
+const packageVersion = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version as string;
 
 program
   .name("ellygent")
+  .enablePositionalOptions()
   .description("Professional CLI for engineering context discovery, requirements sync, and AI-assisted workflows")
-  .version("0.1.1")
+  .version(packageVersion)
   .option("--config <path>", "Use an isolated config file (ignores ELLYGENT_* environment variables)")
   .option("-f, --format <type>", "Output format: json (default) or markdown/md", "json")
   .option("--json", "Output as JSON (shorthand for --format json)")
@@ -85,8 +88,8 @@ ${chalk.bold("LEARN MORE")}
 
 const context = createCommandContext();
 
-program.hook("preAction", () => {
-  const configPath = program.opts().config as string | undefined;
+program.hook("preAction", (_command, actionCommand) => {
+  const configPath = getEffectiveOptions(actionCommand).config as string | undefined;
   if (configPath) Object.assign(context, createCommandContext(configPath));
 });
 
@@ -102,6 +105,21 @@ registerCompletionCommands(program);
 // Register legacy commands with deprecation warnings for backward compatibility
 // These will be removed in v1.0.0
 registerLegacyCommandsWithWarnings(program, context);
+
+// Positional parsing prevents the root version action from stealing a baseline.
+// Re-declare global options on descendants so existing trailing global flags work.
+function configureOptions(command: Command): void {
+  command.enablePositionalOptions();
+  if (command !== program) {
+    for (const option of program.options) {
+      if (option.long !== "--version" && !command.options.some(local => local.long === option.long)) {
+        command.addOption(option);
+      }
+    }
+  }
+  for (const child of command.commands) configureOptions(child);
+}
+configureOptions(program);
 
 program.parseAsync(process.argv).catch((error: unknown) => {
   const message = error instanceof Error ? error.message : "Unexpected CLI error";
@@ -169,12 +187,13 @@ function registerLegacyCommandsWithWarnings(program: Command, context: typeof cr
     .description("[DEPRECATED] Use 'ellygent context inspect' instead")
     .option("--project <identifier>", "Project identifier")
     .option("--version <identifier>", "Version identifier")
-    .action(async () => {
+    .action(async (_options, legacyCommand) => {
       warnDeprecated("contents", "context inspect");
       const contextCmd = program.commands.find(c => c.name() === "context");
       const inspectCmd = contextCmd?.commands.find(c => c.name() === "inspect");
       if (inspectCmd) {
-        await inspectCmd.parseAsync(process.argv.slice(2), { from: "user" });
+        for (const [key, value] of Object.entries(getEffectiveOptions(legacyCommand))) inspectCmd.setOptionValueWithSource(key, value, "cli");
+        await inspectCmd.parseAsync([], { from: "user" });
       }
     });
 
@@ -192,12 +211,16 @@ function registerLegacyCommandsWithWarnings(program: Command, context: typeof cr
     .option("--include-constraints", "Include constraints")
     .option("--include-glossary", "Include glossary")
     .option("--include-ai-summaries", "Include AI summaries")
-    .action(async () => {
+    .action(async (_options, legacyCommand) => {
       warnDeprecated("sync", "context pull");
       const contextCmd = program.commands.find(c => c.name() === "context");
       const pullCmd = contextCmd?.commands.find(c => c.name() === "pull");
       if (pullCmd) {
-        await pullCmd.parseAsync(process.argv.slice(2), { from: "user" });
+        for (const [key, value] of Object.entries(getEffectiveOptions(legacyCommand))) {
+          if (key === "format" && value === "json") { pullCmd.setOptionValue("json", true); continue; }
+          pullCmd.setOptionValueWithSource(key, value, "cli");
+        }
+        await pullCmd.parseAsync([], { from: "user" });
       }
     });
 }

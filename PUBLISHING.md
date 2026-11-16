@@ -1,271 +1,87 @@
-# Publishing Guide
+# CLI release process
 
-This document describes the release and distribution process for the Ellygent CLI.
+The CLI is distributed from GitHub source and version tags. This repository does
+not publish to npm. Do not reuse or move an existing tag: `v0.1.1` identifies the
+older `2b051ff` build, not the overnight benchmark at `ae7d8a6`.
 
-## Release Model
+## Prepare and verify
 
-The CLI is distributed directly from GitHub source.
+Use Node.js 20 or newer and the checked-in lockfile. Version changes must update
+`package.json` and `package-lock.json`; the executable reads package metadata so
+its version cannot drift independently.
 
-- Official install: hosted installer scripts that clone the GitHub repo, build locally, and install globally.
-- Manual install: clone the GitHub repo, run `npm install`, `npm run build`, and `npm install -g .`.
-- Version-pinned install: clone with `--branch vX.Y.Z` before building.
-
-## Distribution Architecture
-
-```
-ellygent-cli/
-   scripts/
-      publish-to-frontend.js       # Copy installer scripts to frontend repo
-      install.sh                   # Unix installer wrapper for npm install
-      install.ps1                  # Windows installer wrapper for npm install
-
-ellygent-frontend/
-   public/
-      cli/
-         install.sh
-         install.ps1
-         distribution-summary.json
-```
-
-## Automated Release Process
-
-Releases are automated via GitHub Actions.
-
-### Trigger a Release
-
-1. **Update version in package.json**
-   ```bash
-   npm version patch  # 0.1.0 → 0.1.1
-   npm version minor  # 0.1.0 → 0.2.0
-   npm version major  # 0.1.0 → 1.0.0
-   ```
-
-2. **Update CHANGELOG.md**
-   - Move unreleased changes to new version section
-   - Add release date
-
-3. **Commit and push version bump**
-   ```bash
-   git add package.json CHANGELOG.md
-   git commit -m "Release v0.1.1"
-   git push origin main
-   ```
-
-4. **Create and push Git tag**
-   ```bash
-   git tag v0.1.1
-   git push origin v0.1.1
-   ```
-
-5. **GitHub Actions automatically:**
-   - Builds TypeScript to JavaScript
-   - Publishes installer scripts to the frontend public directory
-   - Creates GitHub Release notes with GitHub checkout installation instructions
-
-### Manual Build (Local Testing)
-
-Build the CLI locally:
-
-```bash
-# Release build
-npm run build:release
-
-# Individual steps
-npm run build              # TypeScript → JavaScript
-
-# Publish installer scripts to frontend (requires ../ellygent-frontend)
-npm run publish:frontend
-```
-
-### Verify Build Output
-
-After build, verify:
-
-```bash
-ls -lh dist/
-```
-
-## npm Publishing
-
-To publish to npm registry:
-
-### Pre-Release Checklist
-
-Before publishing a new version:
-
-1. **Run tests and verify coverage**
-   ```powershell
-   npm test
-   npm run test:coverage
-   ```
-
-2. **Run linter**
-   ```powershell
-   npm run lint
-   ```
-
-3. **Build and verify TypeScript compilation**
-   ```powershell
-   npm run build
-   ```
-
-4. **Test package contents**
-   ```powershell
-   npm pack --dry-run
-   ```
-   - Verify only dist/ and README.md are included
-   - Confirm no test files, source files, or unnecessary artifacts
-
-5. **Update version**
-   - Follow [Semantic Versioning](https://semver.org/)
-   - MAJOR: Breaking changes
-   - MINOR: New features (backward compatible)
-   - PATCH: Bug fixes (backward compatible)
-
-   ```powershell
-   # Patch: 0.1.0 → 0.1.1
-   npm version patch
-
-   # Minor: 0.1.0 → 0.2.0
-   npm version minor
-
-   # Major: 0.1.0 → 1.0.0
-   npm version major
-   ```
-
-6. **Update CHANGELOG.md**
-   - Move unreleased changes to new version section
-   - Add release date
-   - Summarize changes under Added/Changed/Fixed/Removed
-
-## Publishing to npm
-
-### First-time Setup
-
-1. **Login to npm**
-   ```powershell
-   npm login
-   ```
-
-2. **Verify package name availability**
-   ```powershell
-   npm search @ellygent/cli
-   ```
-
-### Publishing
-
-1. **Dry run to verify**
-   ```powershell
-   npm publish --dry-run
-   ```
-
-2. **Publish to npm**
-   ```powershell
-   npm publish --access public
-   ```
-   - For scoped packages (@ellygent/cli), add `--access public`
-   - For private packages, use `--access restricted`
-
-3. **Verify published package**
-   ```powershell
-   npm info @ellygent/cli
-   ```
-
-4. **Create Git tag**
-   ```powershell
-   git tag v0.1.0
-   git push origin v0.1.0
-   ```
-
-5. **Create GitHub Release**
-   - Go to GitHub releases page
-   - Create new release from tag
-   - Copy CHANGELOG.md content for release notes
-   - Reference the hosted installer scripts or manual GitHub checkout steps
-
-## Installing During Development
-
-Install from GitHub source:
-
-```powershell
-# Clone main
-git clone --depth 1 https://github.com/EEQuality/ellygent-cli.git
-cd ellygent-cli
-npm install
+```sh
+npm version patch --no-git-tag-version
+npm ci
+npm run typecheck
 npm run build
+npm test
+REGRESSION_CASE=named npm run test:executable
+REQUIRE_CROSS_FS=1 REGRESSION_CASE=refresh npm run test:executable
+npm pack --dry-run
+```
+
+The executable checks use a loopback fixture API, synthetic credentials, closed
+stdin and isolated configuration. Linux release validation requires `/dev/shm`
+on a different device from the workspace. Failure injection remains mandatory
+alongside that real cross-filesystem check. Independent verification must rerun
+both regressions and review rollback/recovery. Record untested platforms and
+production flows explicitly; do not test production as a release check.
+
+Update CHANGELOG and exact-ref documentation before committing. Push the reviewed
+commit, wait for its main-branch verification job to pass, then tag that exact
+commit. For this correction, the intended new version is `0.1.2`.
+
+```sh
+git push origin main
+# Inspect the verification run for the exact commit and wait for success.
+git tag -a v0.1.2 -m "Ellygent CLI 0.1.2"
+git push origin v0.1.2
+```
+
+These commands require release authorization; they are not part of local tests.
+
+## Automated gates and publication
+
+`.github/workflows/release.yml` runs on pull requests, main pushes and version
+tags. `verify` installs from the lockfile, typechecks, builds, runs the full suite
+and runs both executable regressions with real cross-filesystem coverage required.
+The publication job depends on this gate. Configure branch protection separately
+if merges must also require the verification status.
+
+For a version tag, publication validates that the tag and any manually supplied
+version match package metadata and the executable. It generates installer assets
+in a temporary local directory; it does not check out or deploy the private
+frontend. Missing/empty installers, inconsistent summary metadata and unmatched
+release assets fail the job. Installer scripts and the summary are uploaded as a
+workflow artifact and attached to the GitHub release.
+
+A manual dispatch must select the existing matching tag and supply its version;
+it cannot publish a branch checkout under another version. After publication,
+verify the release URL, tag commit, job conclusion and three attached assets.
+Public frontend documentation and installer hosting remain a separate deployment;
+CLI publication does not authorize unrelated frontend changes.
+
+## Exact installation
+
+```sh
+git clone --depth 1 --branch v0.1.2 https://github.com/EEQuality/ellygent-cli.git
+cd ellygent-cli
+npm ci
+npm run build
+node dist/index.js --version
 npm install -g .
-
-# Clone a specific version
-git clone --depth 1 --branch v0.1.0 https://github.com/EEQuality/ellygent-cli.git
 ```
 
-## Unpublishing (Emergency Only)
+For stronger reproducibility, use the full fixed commit recorded in README and
+compare `git rev-parse HEAD` before building. A version string alone does not
+identify which historical `0.1.1` build was used.
 
-If you need to unpublish a version within 72 hours:
+## Recovery and rollback
 
-```powershell
-npm unpublish @ellygent/cli@0.1.0
-```
-
-**Warning:** Unpublishing is permanent and can break dependent projects. Only use in emergencies (e.g., leaked credentials).
-
-## Version Strategy
-
-- **0.x.x**: Development/beta versions
-- **1.0.0**: First stable release
-- **1.x.x**: Stable releases with backward compatibility
-
-## CI/CD Integration (Future)
-
-Consider automating releases:
-
-1. GitHub Actions workflow triggered on version tags
-2. Automated testing before publish
-3. Automated changelog generation
-4. Automated npm publish with token
-
-Example workflow trigger:
-```yaml
-on:
-  push:
-    tags:
-      - 'v*'
-```
-
-## Package Quality Checks
-
-Before publishing, verify:
-
-- [ ] All tests passing
-- [ ] Lint errors resolved
-- [ ] Coverage meets thresholds
-- [ ] README.md is up to date
-- [ ] CHANGELOG.md has version entry
-- [ ] package.json version bumped
-- [ ] Git commit and tag created
-- [ ] No sensitive data in package
-- [ ] Dependencies are production-ready (no dev dependencies leaked)
-
-## Rollback Strategy
-
-If issues are found after publishing:
-
-1. **Patch Release**: Fix and publish new patch version
-2. **Deprecation**: Mark broken version as deprecated
-   ```powershell
-   npm deprecate @ellygent/cli@0.1.0 "Critical bug, use 0.1.1 instead"
-   ```
-3. **Unpublish** (only within 72 hours)
-
-## Support Channels
-
-After publishing, monitor:
-- GitHub Issues for bug reports
-- npm download stats
-- User feedback
-
-## License
-
-Current: UNLICENSED (private/internal use)
-
-If publishing publicly, update to appropriate open-source license (MIT, Apache-2.0, etc.)
+Context refresh uses a multi-step directory swap with retained backup and
+rollback. See [refresh recovery](documentation/refresh-recovery.md).
+A faulty public release should be superseded by a new patch release; do not move
+published tags. Prefer a previously verified explicit ref while investigating.
+No production authentication, live export, or first-time usability validation is
+implied by local fixtures or GitHub Actions.

@@ -1,6 +1,6 @@
 import AdmZip from "adm-zip";
-import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
-import { dirname, resolve, sep } from "node:path";
+import { mkdir, mkdtemp, readFile, rename, rm, writeFile, lstat } from "node:fs/promises";
+import { dirname, join, resolve, sep } from "node:path";
 import type { PackageManifest } from "../types/context.js";
 import { contextDirectory } from "../utils/workspace.js";
 
@@ -10,44 +10,74 @@ export interface ExtractResult {
 }
 
 export class PackageExtractor {
-  async extract(zipPath: string, workspace: string, stagingRoot: string): Promise<ExtractResult> {
-    const extractionRoot = resolve(stagingRoot, "extract");
-    await mkdir(extractionRoot, { recursive: true });
-
-    const zip = new AdmZip(zipPath);
-    const entries = zip.getEntries();
-    if (entries.length === 0) {
-      throw new Error("Downloaded ZIP package is empty.");
-    }
-
-    for (const entry of entries) {
-      const safeName = normalizeZipEntry(entry.entryName);
-      if (!safeName.startsWith(".ellygent/") && safeName !== ".ellygent") {
-        throw new Error(`Unexpected ZIP entry outside .ellygent/: ${entry.entryName}`);
-      }
-
-      const targetPath = resolve(extractionRoot, safeName);
-      assertInside(targetPath, extractionRoot);
-
-      if (entry.isDirectory) {
-        await mkdir(targetPath, { recursive: true });
-        continue;
-      }
-
-      await mkdir(dirname(targetPath), { recursive: true });
-      const data = entry.getData();
-      await writeFile(targetPath, data);
-    }
-
-    const stagedContextDir = resolve(extractionRoot, ".ellygent");
-    const stagedManifestPath = resolve(stagedContextDir, "manifest.json");
-    const manifest = await readManifest(stagedManifestPath);
-
+  async extract(zipPath: string, workspace: string, _stagingRoot: string): Promise<ExtractResult> {
+    // The archive may be downloaded on another device; extraction and both
+    // promotion renames must live on the destination filesystem.
+    await mkdir(workspace, { recursive: true });
+    const lock = join(workspace, ".ellygent-refresh.lock");
+    await mkdir(lock).catch(() => {
+      throw new Error(`Context refresh locked: ${lock}. If interrupted, follow documentation/refresh-recovery.md before retrying.`);
+    });
+    let extractionRoot: string | undefined;
     const targetDir = contextDirectory(workspace);
-    await rm(targetDir, { recursive: true, force: true });
-    await rename(stagedContextDir, targetDir);
+    const backup = join(workspace, ".ellygent.previous");
+    try {
+      // A retained backup is authoritative after an interrupted promotion.
+      if (await exists(backup)) {
+        if (await exists(targetDir)) await readManifest(join(targetDir, "manifest.json"));
+        else await rename(backup, targetDir);
+        await rm(backup, { recursive: true, force: true });
+      }
+      extractionRoot = await mkdtemp(join(workspace, ".ellygent-stage-"));
 
-    return { manifest, targetDir };
+      const zip = new AdmZip(zipPath);
+      const entries = zip.getEntries();
+      if (entries.length === 0) {
+        throw new Error("Downloaded ZIP package is empty.");
+      }
+
+      for (const entry of entries) {
+        const safeName = normalizeZipEntry(entry.entryName);
+        if (!safeName.startsWith(".ellygent/") && safeName !== ".ellygent") {
+          throw new Error(`Unexpected ZIP entry outside .ellygent/: ${entry.entryName}`);
+        }
+
+        const targetPath = resolve(extractionRoot, safeName);
+        assertInside(targetPath, extractionRoot);
+
+        if (entry.isDirectory) {
+          await mkdir(targetPath, { recursive: true });
+          continue;
+        }
+
+        await mkdir(dirname(targetPath), { recursive: true });
+        const data = entry.getData();
+        await writeFile(targetPath, data);
+      }
+
+      const stagedContextDir = resolve(extractionRoot, ".ellygent");
+      const stagedManifestPath = resolve(stagedContextDir, "manifest.json");
+      const manifest = await readManifest(stagedManifestPath);
+
+      const hadPrevious = await exists(targetDir);
+      if (hadPrevious) await rename(targetDir, backup);
+      try {
+        await rename(stagedContextDir, targetDir);
+      } catch (error) {
+        if (hadPrevious) {
+          try { await rename(backup, targetDir); }
+          catch { throw new Error(`Promotion and rollback failed. Last good export retained at ${backup}; see documentation/refresh-recovery.md.`, { cause: error }); }
+        }
+        throw error;
+      }
+      // Cleanup failure does not invalidate a successfully installed package.
+      await rm(backup, { recursive: true, force: true }).catch(() => undefined);
+
+      return { manifest, targetDir };
+    } finally {
+      if (extractionRoot) await rm(extractionRoot, { recursive: true, force: true }).catch(() => undefined);
+      await rm(lock, { recursive: true, force: true });
+    }
   }
 }
 
@@ -103,4 +133,9 @@ function isManifest(value: unknown): value is PackageManifest {
     typeof item.contents === "object" &&
     item.contents !== null
   );
+}
+
+async function exists(path: string): Promise<boolean> {
+  try { await lstat(path); return true; }
+  catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return false; throw error; }
 }

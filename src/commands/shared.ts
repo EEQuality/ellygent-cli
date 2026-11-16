@@ -22,9 +22,24 @@ export function createCommandContext(configPath?: string): CommandContext {
   };
 }
 
+// Commander merges ancestor defaults over child values in optsWithGlobals().
+// With positional options, prefer explicit values at the nearest command while
+// retaining root defaults when a child only has its own default export format.
+export function getEffectiveOptions(command: Command): Record<string, unknown> {
+  const chain: Command[] = [];
+  for (let current: Command | null = command; current; current = current.parent) chain.unshift(current);
+  const values: Record<string, unknown> = {};
+  for (const current of chain) {
+    for (const [key, value] of Object.entries(current.opts())) {
+      if (current.getOptionValueSource(key) !== "default" || !(key in values)) values[key] = value;
+    }
+  }
+  return values;
+}
+
 export function getFormatter(command: Command): FormatterContext {
-  const opts = command.optsWithGlobals() as { format?: string };
-  const format = (opts.format || "json") as OutputFormat;
+  const opts = getEffectiveOptions(command) as { format?: string; json?: boolean };
+  const format = (opts.json ? "json" : opts.format || "json") as OutputFormat;
   return createFormatter(format);
 }
 
@@ -32,7 +47,7 @@ export function getFormatter(command: Command): FormatterContext {
  * Get OutputController from command options
  */
 export function getOutputController(command: Command): OutputController {
-  const opts = command.optsWithGlobals() as { 
+  const opts = getEffectiveOptions(command) as {
     format?: string; 
     quiet?: boolean;
     verbose?: boolean;
