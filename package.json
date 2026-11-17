@@ -26,7 +26,10 @@
     "build:release": "npm run build",
     "publish:frontend": "node scripts/publish-to-frontend.js",
     "test:executable": "node scripts/executable-regressions.mjs",
-    "test:installed": "node scripts/installed-regressions.mjs"
+    "test:installed": "node scripts/installed-regressions.mjs",
+    "test:installer-integrity": "node scripts/install-integrity.node-test.mjs",
+    "gate:release-security": "node scripts/release-security-gate.mjs",
+    "test:release-security-policy": "node scripts/release-security-gate.node-test.mjs"
   },
   "engines": {
     "node": ">=20.0.0"

@@ -4,71 +4,42 @@ Developer CLI for authenticating with Ellygent and downloading AI-optimized engi
 
 ## Install
 
-### Quick Install (Recommended)
+### Pinned source and reviewed installer
 
-Use the hosted installer wrapper for your shell:
+Default installation selects audited **v0.1.2**, exact commit
+`51d818776b5aaac0d9beac23eb9d9946f8170b01`, with a pinned lockfile. It does not install main.
+Download the hosted `install.sh` or `install.ps1`, inspect it and compare its SHA256 with
+an independently trusted release record before execution. A checksum on the same mutable
+website is not a signature. See [release integrity](RELEASE-INTEGRITY.md) for bootstrap,
+managed install/PATH migration, recovery, explicit development opt-in and release gates.
 
-This is the official distribution path. Standalone executables are no longer published.
+The wrapper verifies the common runtime checksum; the runtime checks source identity,
+uses `npm ci --ignore-scripts` and explicit build, verifies candidate version/checksums,
+then atomically selects a managed version. Existing npm-global installs are never removed.
+Both aliases are in the printed managed bin directory; add it to PATH deliberately.
 
-**Windows (PowerShell):**
-```powershell
-irm https://ellygent.com/cli/install.ps1 | iex
-```
-
-**Linux/macOS:**
-```bash
-curl -fsSL https://ellygent.com/cli/install.sh | sh
-```
-
-The official installer scripts clone the CLI from GitHub, then install it locally. They:
-- Check that Node.js, npm, and Git are installed.
-- Clone the CLI repository from GitHub.
-- Install dependencies and build the CLI locally.
-- Install the CLI globally with npm.
-- Verify the installed CLI command and print next steps.
-
-After installation, validate with:
-
-```powershell
-ellygent --help
-ellygent --version
-ellygent auth login --token <your-personal-access-token>
-ellygent whoami
-```
-
-### Manual GitHub Checkout
+For reviewed source-only use without changing a working install:
 
 ```bash
-git clone --depth 1 https://github.com/EEQuality/ellygent-cli.git
+(
+set -eu
+test ! -e ellygent-cli
+git init ellygent-cli
 cd ellygent-cli
-npm ci
-npm run build
-npm install -g .
+git remote add origin https://github.com/EEQuality/ellygent-cli.git
+git fetch --depth 1 origin 51d818776b5aaac0d9beac23eb9d9946f8170b01
+git checkout --detach FETCH_HEAD
+test "$(git rev-parse HEAD)" = 51d818776b5aaac0d9beac23eb9d9946f8170b01
+node -e 'const f=require("fs"),c=require("crypto");if(c.createHash("sha256").update(f.readFileSync("package-lock.json")).digest("hex")!=="6a74281752c87bc2bfbc30300b997e39e250ef5f3ba3f49fdb74200e4af5ebe4")process.exit(2)'
+npm ci --ignore-scripts
+npm run build --ignore-scripts
+node dist/index.js --version
+)
 ```
 
-### Install a specific GitHub ref
-
-```bash
-git clone --depth 1 --branch v0.1.2 https://github.com/EEQuality/ellygent-cli.git
-cd ellygent-cli
-npm ci
-npm run build
-npm install -g .
-```
-
-This installs directly from GitHub source and does not depend on the public npm registry.
-
-### Build from Source
-
-For local development:
-
-```bash
-git clone https://github.com/EEQuality/ellygent-cli.git
-cd ellygent-cli
-npm ci
-npm run build
-npm link
-```
+Local development checkout/build remains available. Main/unknown refs are never silently
+trusted by the installer; explicit development mode requires independent commit/lock/version
+pins. The shipped v0.1.2 tag is unchanged; later local fixes need a new reviewed release pin.
 
 ## Login
 
@@ -607,24 +578,21 @@ Local logout only removes the local copy; it does not revoke a copied credential
 The overnight benchmark used `ae7d8a60a036cb1dd77b7fa21cb51c007350f9df`
 (reports `0.1.1`). The existing `v0.1.1` tag is the older
 `2b051ff84ce6cfc48e4087ec7545a0117d3bd73d`; it does not identify that build.
-The fixes are in CLI `0.1.2`. The exact implementation ref is
-`038aafefe0b105d131eff4137f53074b7d9cd638`. The release tag must point to a commit
-containing this implementation; `v0.1.1` remains unchanged.
-
-To reproduce the validated implementation independently of a mutable branch:
-
-```sh
-git clone https://github.com/EEQuality/ellygent-cli.git
-cd ellygent-cli
-git checkout --detach 038aafefe0b105d131eff4137f53074b7d9cd638
-```
+The fixes are in the shipped CLI `0.1.2` source at
+`51d818776b5aaac0d9beac23eb9d9946f8170b01`, locally verified from v0.1.2.
+Historical implementation checkpoint `038aafefe0b105d131eff4137f53074b7d9cd638`
+is retained in prior evidence; it is not the current default source pin. Use the exact
+commit and lock check in the installation section above. On a separately reviewed
+new release candidate retain these verification gates:
 
 ```sh
-npm ci
+npm ci --ignore-scripts
 npm run typecheck
 npm run build
 npm test
+npm run test:installer-integrity
 REQUIRE_CROSS_FS=1 npm run test:executable # Linux with /dev/shm on another device
+npm run test:installed
 ```
 
 The executable regression uses a loopback API and synthetic credentials, checks
@@ -641,9 +609,8 @@ Local acceptance evidence and limitations: [benchmark blocker verification](docu
 
 For a tag, pass the version to the installer process:
 
-```sh
-curl -fsSL https://ellygent.com/cli/install.sh | VERSION=v0.1.2 sh
-```
+Download and independently verify install.sh, then run `VERSION=v0.1.2 sh ./install.sh`.
+See RELEASE-INTEGRITY.md for the trust prerequisite.
 
 For an exact commit, use explicit Git checkout and check `git rev-parse HEAD`
 (see the full verified SHA in README). On current main and subsequent releases
@@ -658,5 +625,5 @@ JavaScript with the built checkout by SHA-256, and runs the fixture regressions
 against the installed executable. It verifies B1 selection, exported files,
 single JSON stdout and refresh failure preservation. `--version` alone cannot
 identify a build: both historical benchmark/tag builds reported `0.1.1`.
-The release publication job depends on all verification, including this installed
-artifact check, for tag pushes and manual dispatch as well as PR/main checks.
+Publication requires all verification and the separately configured trusted security
+builder/attestation gate. It is disabled by default; manual dispatch is verify-only.
