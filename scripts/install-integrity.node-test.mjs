@@ -12,9 +12,12 @@ const root = resolve(import.meta.dirname,'..');
 const lock = readFileSync(join(root,'package-lock.json'));
 const metadata = readFileSync(join(root,'package.json'));
 function fixture(stage) { writeFileSync(join(stage,'package.json'),metadata); writeFileSync(join(stage,'package-lock.json'),lock); }
-function runner({failBuild=false,wrongVersion=false,failCI=false,wrongCommit=false}={}) {
+function runner({failBuild=false,wrongVersion=false,failCI=false,wrongCommit=false,wrongBlob=false}={}) {
   return (program,args,cwd) => {
-    if(program==='git') return args.includes('rev-parse')?(wrongCommit?'a'.repeat(40):RELEASE.commit):'';
+    if(program==='git') {
+      if(args.includes('ls-files'))return ['package.json','package-lock.json'].map(name=>{const bytes=readFileSync(join(cwd,name));return `100644 ${wrongBlob?'d'.repeat(40):createHash('sha1').update(Buffer.from(`blob ${bytes.length}\0`)).update(bytes).digest('hex')} 0\t${name}\0`;}).join('');
+      return args.includes('rev-parse')?(wrongCommit?'a'.repeat(40):RELEASE.commit):'';
+    }
     if(args.includes('ci')) { assert.ok(args.includes('--ignore-scripts')); assert.ok(!args.includes('install'));if(failCI)throw Error('synthetic dependency failure');return ''; }
     if(args.includes('build')) { if(failBuild)throw Error('synthetic build failure');mkdirSync(join(cwd,'dist'),{recursive:true});writeFileSync(join(cwd,'dist/index.js'),'console.log("0.1.2");');return ''; }
     if(args.includes('--version')) return wrongVersion?'0.0.0':'0.1.2';
@@ -43,7 +46,7 @@ test('clean managed install has exact receipt/version and no global uninstall; b
 test('dependency/build/version/commit failures preserve complete existing working selection',()=>isolated(temp=>{
  const env={ELLYGENT_INSTALL_ROOT:join(temp,'install')};install({env,populate:fixture,run:runner()});
  const before=readFileSync(join(env.ELLYGENT_INSTALL_ROOT,'current.json'));
- for(const options of [{failCI:true},{failBuild:true},{wrongVersion:true},{wrongCommit:true}]) {
+ for(const options of [{failCI:true},{failBuild:true},{wrongVersion:true},{wrongCommit:true},{wrongBlob:true}]) {
   assert.throws(()=>install({env,populate:fixture,run:runner(options)}));assert.deepEqual(readFileSync(join(env.ELLYGENT_INSTALL_ROOT,'current.json')),before);
  }
 }));

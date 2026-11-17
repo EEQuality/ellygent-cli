@@ -29,7 +29,8 @@
     "test:installed": "node scripts/installed-regressions.mjs",
     "test:installer-integrity": "node scripts/install-integrity.node-test.mjs",
     "gate:release-security": "node scripts/release-security-gate.mjs",
-    "test:release-security-policy": "node scripts/release-security-gate.node-test.mjs"
+    "test:release-security-policy": "node scripts/release-security-gate.node-test.mjs",
+    "test:checkout-bytes": "python3 scripts/test-checkout-bytes.py"
   },
   "engines": {
     "node": ">=20.0.0"

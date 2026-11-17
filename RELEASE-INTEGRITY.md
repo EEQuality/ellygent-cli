@@ -18,6 +18,17 @@ No signature-verification key or trusted release-builder attestation is configur
 The trusted wrapper pins the common Node runtime's SHA256 before executing it. Its fixed
 repository fetch is by the audited full commit, not main or a mutable tag. It checks exact
 HEAD, package name/version and independently pinned lock hash before npm can execute code.
+Before init and the first checkout, installer Git commands ignore inherited global/system/
+environment Git configuration, global/system attributes and user templates/hooks. The
+source checkout explicitly uses core.autocrlf=false and LF, then compares every supported
+tracked regular file with its Git index blob bytes before npm. A clean git status alone is
+insufficient: normalization can hide CRLF differences. Any remaining repository-authored
+encoding/EOL transformation is refused rather than weakening the reviewed hash comparison.
+Explicit developer mode remains available with independently trusted commit/lock/version;
+unsupported transformed/symlink/submodule source layouts must be reviewed separately.
+The installer does not change users' Git settings. Corporate proxy/credential Git config
+is not inherited; public HTTPS source retrieval requires trusted installed Git/OS networking.
+
 `npm ci --ignore-scripts` respects the reviewed lockfile and suppresses dependency lifecycle
 hooks; the approved source build script is then invoked explicitly. npm CLI JavaScript is
 located from the installed Node distribution (or explicit trusted ELLYGENT_NPM_CLI), avoiding
@@ -130,3 +141,16 @@ external action provenance, scanner execution, real GitHub attestations/publicat
 Windows/macOS native filesystem behavior and browser presentation remains NOT RUN.
 Existing executable/installed v0.1.2 named-baseline and safe-refresh regressions remain
 release-blocking CI steps; fixture-only installer checks cannot replace those gates.
+
+
+### Checkout-byte maintenance and regression
+
+After reviewing a shared-runtime source change, run the local-only
+`node scripts/update-installer-runtime-pin.mjs`, then the explicit FRONTEND_ROOT publisher.
+The generator changes only the two known wrapper pin assignments; the publisher refuses a
+stale pin before writing hosted files. This is local artifact synchronization, not release
+publication or creation of independent signing trust. `npm run test:checkout-bytes` uses
+Python3 and existing local Git objects in disposable fixtures; it never fetches or installs.
+It covers inherited autocrlf true/false, inert inherited transform/hook/template refusal,
+non-lock source transformation detection and stale-pin hosted-copy refusal. Native Windows
+execution remains a separate gate; the same byte policy is shared by both wrappers.

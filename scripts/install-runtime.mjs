@@ -11,7 +11,35 @@ export const RELEASE = Object.freeze({ version: '0.1.2', commit: '51d818776b5aaa
 const REPOSITORY = 'https://github.com/EEQuality/ellygent-cli.git';
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const noOutput = ['ignore', 'pipe', 'pipe'];
-const execute = (program, args, cwd) => execFileSync(program, args, { cwd, stdio: noOutput, encoding: 'utf8', windowsHide: true });
+const execute = (program, args, cwd, options = {}) => execFileSync(program, args, { cwd, env: options.env || process.env, stdio: noOutput, encoding: 'utf8', windowsHide: true });
+
+/** Isolate Git before init/fetch/first checkout; inherited filters/templates never run. */
+export function sourceGit(directory, privateConfigDirectory, run = execute) {
+  mkdirSync(privateConfigDirectory, { recursive: true, mode: 0o700 });
+  const empty = join(privateConfigDirectory, 'empty-config');
+  const template = join(privateConfigDirectory, 'empty-template');
+  writeFileSync(empty, '', { mode: 0o600 }); mkdirSync(template, { recursive: true, mode: 0o700 });
+  const environment = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.toUpperCase().startsWith('GIT_')));
+  Object.assign(environment, { GIT_CONFIG_GLOBAL: empty, GIT_CONFIG_SYSTEM: empty, GIT_CONFIG_NOSYSTEM: '1', GIT_ATTR_NOSYSTEM: '1', GIT_TERMINAL_PROMPT: '0' });
+  const invoke = args => run('git', ['-c', 'core.autocrlf=false', '-c', 'core.eol=lf', '-c', `core.attributesFile=${empty}`, '-c', `core.hooksPath=${template}`, '-c', 'core.fsmonitor=false', ...args], directory, { env: environment });
+  return { invoke, initialize: () => invoke(['init', `--template=${template}`, '.']) };
+}
+
+/** Git status may be clean after a newline/encoding transform; compare raw blob bytes. */
+export function verifyCheckoutBytes(directory, index) {
+  const entries = index.split('\0').filter(Boolean);
+  if (!entries.length) throw Error('No verified source index entries');
+  const root = resolve(directory);
+  for (const entry of entries) {
+    const match = /^(100644|100755) ([a-f0-9]{40}) 0\t([\s\S]+)$/.exec(entry);
+    if (!match) throw Error('Unsupported source entry or unresolved index');
+    const path = resolve(root, match[3]);
+    if (!path.startsWith(root + sep) || !lstatSync(path).isFile() || lstatSync(path).isSymbolicLink()) throw Error('Unsupported source path');
+    const bytes = readFileSync(path);
+    const blob = createHash('sha1').update(Buffer.from(`blob ${bytes.length}\0`)).update(bytes).digest('hex');
+    if (blob !== match[2]) throw Error('Checkout bytes differ from reviewed Git source');
+  }
+}
 
 export function selectRelease(env = process.env) {
   const requested = env.VERSION || `v${RELEASE.version}`;
@@ -113,15 +141,17 @@ export function install({ env = process.env, run = execute, populate, promote = 
     const previous = readState(root);
     if (previous) verifyGeneration(previous.current, run);
     stage = mkdtempSync(join(root, 'versions', '.candidate-'));
+    const git = sourceGit(stage, join(lock, 'git-config'), run);
     if (populate) populate(stage, selection);
     else {
-      const git = (args) => run('git', ['-c', 'core.hooksPath=/dev/null', ...args], stage);
-      git(['init', '.']); git(['remote', 'add', 'origin', REPOSITORY]);
-      git(['fetch', '--depth', '1', 'origin', selection.commit]); git(['checkout', '--detach', 'FETCH_HEAD']);
+      git.initialize(); git.invoke(['remote', 'add', 'origin', REPOSITORY]);
+      git.invoke(['fetch', '--depth', '1', 'origin', selection.commit]);
+      git.invoke(['checkout', '--detach', 'FETCH_HEAD']);
     }
-    const head = run('git', ['-C', stage, 'rev-parse', 'HEAD'], stage);
+    const head = git.invoke(['rev-parse', 'HEAD']);
     verifySource(stage, selection, head);
-    if (run('git', ['-C', stage, 'status', '--porcelain'], stage).trim()) throw Error('Source checkout is modified');
+    verifyCheckoutBytes(stage, git.invoke(['ls-files', '--stage', '-z']));
+    if (git.invoke(['status', '--porcelain']).trim()) throw Error('Source checkout is modified');
     const npm = populate ? 'synthetic-npm-cli.js' : npmCLI(env);
     const config = join(stage, '.installer-npmrc'), globalConfig = join(stage, '.installer-global-npmrc');
     writeFileSync(config, '', { mode: 0o600 }); writeFileSync(globalConfig, '', { mode: 0o600 });

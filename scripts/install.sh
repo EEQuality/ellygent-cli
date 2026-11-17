@@ -5,7 +5,7 @@ set -eu
 umask 077
 VERSION="${VERSION:-v0.1.2}"
 export VERSION
-RUNTIME_SHA256="54a4f92e54ca4828e013cf75996ebaca9bc82da3b7112e6fd9e8b7503721818f"
+RUNTIME_SHA256="2319a564302003fd3a4c01f021b37fdf3d6968d38d384ca3b820b33a212201be"
 RUNTIME_URL="https://ellygent.com/cli/install-runtime.mjs"
 command -v node >/dev/null 2>&1 || { echo 'Node.js20+ required' >&2; exit 1; }
 command -v git >/dev/null 2>&1 || { echo 'Git required' >&2; exit 1; }

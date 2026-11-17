@@ -48,6 +48,13 @@ function copyFile(sourcePath, targetPath) {
   return true;
 }
 
+// Refuse a stale bootstrap pin before writing any hosted asset.
+const runtimeHash = createHash('sha256').update(fs.readFileSync(path.join(rootDir, 'scripts', 'install-runtime.mjs'))).digest('hex');
+for (const [name, pattern] of [['install.sh', /RUNTIME_SHA256="([a-f0-9]{64})"/g], ['install.ps1', /\$RuntimeSha256 = "([a-f0-9]{64})"/g]]) {
+  const matches = [...fs.readFileSync(path.join(rootDir, 'scripts', name), 'utf8').matchAll(pattern)];
+  if (matches.length !== 1 || matches[0][1] !== runtimeHash) throw Error('Stale installer runtime pin; run the reviewed local pin generator first');
+}
+
 // Copy installer scripts to /cli/ directory
 console.log('\nCopying installer scripts...');
 const cliDir = path.join(frontendRoot, 'public', 'cli');
