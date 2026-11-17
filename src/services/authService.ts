@@ -1,4 +1,5 @@
-import { password, input } from "@inquirer/prompts";
+import input from "@inquirer/input";
+import password from "@inquirer/password";
 import { getServerUrlFromApiBase } from "../api/baseUrl.js";
 import { ContextApiClient } from "../api/contextApiClient.js";
 import { ConfigStore, normalizeApiUrl } from "../config/configStore.js";

@@ -8,9 +8,10 @@ import { RELEASE, install, rollback, selectRelease, verifySource } from './insta
 
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const root = resolve(import.meta.dirname,'..');
-// The baseline lock is identical to the locally verified audited release object.
-const lock = readFileSync(join(root,'package-lock.json'));
-const metadata = readFileSync(join(root,'package.json'));
+// Preserve historical trusted-release bytes independently of current dependencies.
+const releaseFixture = join(root, 'scripts', 'fixtures', 'v0.1.2');
+const lock = readFileSync(join(releaseFixture, 'package-lock.json'));
+const metadata = readFileSync(join(releaseFixture, 'package.json'));
 function fixture(stage) { writeFileSync(join(stage,'package.json'),metadata); writeFileSync(join(stage,'package-lock.json'),lock); }
 function runner({failBuild=false,wrongVersion=false,failCI=false,wrongCommit=false,wrongBlob=false}={}) {
   return (program,args,cwd) => {

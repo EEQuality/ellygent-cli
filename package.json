@@ -55,19 +55,21 @@
   "homepage": "https://github.com/ellygent/ellygent-cli#readme",
   "author": "Ellygent",
   "dependencies": {
-    "@inquirer/prompts": "^5.5.0",
     "@types/adm-zip": "^0.5.5",
     "@types/node": "^20.14.11",
-    "adm-zip": "^0.5.16",
+    "adm-zip": "0.6.1",
     "chalk": "^4.1.2",
     "commander": "^12.1.0",
     "ora": "^5.4.1",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "@inquirer/input": "2.3.0",
+    "@inquirer/password": "2.2.0"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^2.0.0",
-    "@vitest/ui": "^2.0.0",
-    "vitest": "^2.0.0"
+    "@vitest/coverage-v8": "4.1.12",
+    "@vitest/ui": "4.1.12",
+    "vitest": "4.1.12",
+    "vite": "6.4.6"
   },
   "license": "UNLICENSED"
 }
