@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { RELEASE, install, rollback, selectRelease, verifySource } from './install-runtime.mjs';
 
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
-const root = resolve(import.meta.dirname,'..');
+const root = fileURLToPath(new URL('..', import.meta.url));
 // Preserve historical trusted-release bytes independently of current dependencies.
 const releaseFixture = join(root, 'scripts', 'fixtures', 'v0.1.2');
 const lock = readFileSync(join(releaseFixture, 'package-lock.json'));
