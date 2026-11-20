@@ -1,11 +1,11 @@
 #!/bin/sh
 # Download/review this wrapper and compare its SHA256 with an independently trusted release record first.
-# Default: audited v0.1.3 source commit, verified lockfile, versioned managed install.
+# Default: audited v0.1.4 source commit, verified lockfile, versioned managed install.
 set -eu
 umask 077
-VERSION="${VERSION:-v0.1.3}"
+VERSION="${VERSION:-v0.1.4}"
 export VERSION
-RUNTIME_SHA256="41eb02b0d58fb45ef9d140a92fd5f1cc3ded931944eba8bb827a0a77b77c8085"
+RUNTIME_SHA256="5363386d1ab8fff346d4fc3d6e016ce655f3b4a7f3f76d2be2c39c3c724dbddc"
 RUNTIME_URL="https://ellygent.com/cli/install-runtime.mjs"
 command -v node >/dev/null 2>&1 || { echo 'Node.js20+ required' >&2; exit 1; }
 command -v git >/dev/null 2>&1 || { echo 'Git required' >&2; exit 1; }

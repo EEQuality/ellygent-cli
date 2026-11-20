@@ -1,13 +1,18 @@
-# CLI 0.1.3 release identity
+# CLI 0.1.4 release identity
 
-Managed installers select source `942ccd6fa5bc01409b51467f4f82a33fb1887aa5`,
-package version0.1.3 and lock SHA256 `a15cb7624adeb30b96a383a6bb4c0f5dcb64c00313f531708f097ee000d984d2`.
+Managed installers select source `d8160c864ffa02ef71658301c6fa9eb2bafbf213`,
+package version 0.1.4 and lock SHA256 `ad5f04da0a90d53e61609a9ba60a9ea9727e93b348047581497ae7fcf09e6678`.
 The release commit adds installer pins/records; the workflow verifies application
 source and package/lock bytes equal the selected source before publication.
 
+CLI 0.1.4 adds anonymous public snapshot browsing. It uses the existing ordinary
+GitHub-hosted release workflow with immutable pins, parser/refresh, installer,
+installed-artifact, and native Windows regression gates. Independent attestation
+and live private-project QA were not run; no new waiver or signing trust is claimed.
+
 The following sections retain the historical security-review baseline and its
-bootstrap/operational limitations. The owner-authorized2026-11-20 exception below
-supersedes the proposed mandatory independent-builder/manual approval gate.
+bootstrap/operational limitations. The owner-authorized 2026-11-20 exception below
+superseded the proposed mandatory independent-builder/manual approval scaffold.
 
 # CLI release integrity and operator transition
 
