@@ -10,7 +10,9 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = (ROOT / 'scripts/install-runtime.mjs').as_uri()
 COMMIT = '51d818776b5aaac0d9beac23eb9d9946f8170b01'
-SOURCE_OBJECTS = ROOT / '.git/objects'
+SOURCE_OBJECTS = Path(subprocess.check_output(
+    ['git', 'rev-parse', '--path-format=absolute', '--git-path', 'objects'], cwd=ROOT, text=True,
+).strip())
 
 PLAN = r'''
 import {sourceGit} from RUNTIME_URI;
