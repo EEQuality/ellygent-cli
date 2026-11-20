@@ -20,7 +20,7 @@ const server = createServer(async (req,res) => {
   requests.push({url:url.pathname, version});
   if (!['B1','main'].includes(version) || mode === 'download') { res.writeHead(400); res.end('invalid baseline'); return; }
   if (url.pathname.endsWith('/contents')) { res.setHeader('Content-Type','application/json'); res.end(JSON.stringify({version,specifications:[{identifier:version,name:version}],system_definitions:[],traceability:{available:false,relationship_count:0},architecture:{available:false},constraints:{available:false},glossary:{available:false}})); }
-  else if (url.pathname.includes('exportProject')) res.end('synthetic ReqIF '+version);
+  else if (url.pathname.includes('/ExportProject/')) res.end('synthetic ReqIF '+version);
   else if (payload.format === 'markdown') {
     const markdownZip = new AdmZip();
     markdownZip.addFile('.ellygent/manifest.json',Buffer.from(JSON.stringify({...manifest,version:{identifier:version,type:version==='main'?'live':'baseline'},export_format:'markdown'})));

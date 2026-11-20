@@ -9,6 +9,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { createHash } from 'node:crypto';
+import { RELEASE } from './install-runtime.mjs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -16,10 +18,8 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
 // Target directory (frontend public)
-const frontendRoot = process.env.FRONTEND_ROOT
-  ? path.resolve(process.env.FRONTEND_ROOT)
-  : path.resolve(rootDir, '..', 'ellygent-frontend');
-const publicDownloadsDir = path.join(frontendRoot, 'public', 'downloads', 'cli');
+if (!process.env.FRONTEND_ROOT) throw Error('Explicit FRONTEND_ROOT is required; no implicit sibling write');
+const frontendRoot = path.resolve(process.env.FRONTEND_ROOT);
 
 console.log('🚀 Publishing CLI installer scripts to frontend...\n');
 
@@ -28,28 +28,6 @@ if (!fs.existsSync(frontendRoot)) {
   console.error(`✗ Frontend directory not found: ${frontendRoot}`);
   console.error('  Ensure ellygent-frontend is located at ../ellygent-frontend');
   process.exit(1);
-}
-
-function clearDirectoryContents(directory) {
-  if (!fs.existsSync(directory)) {
-    return;
-  }
-
-  fs.readdirSync(directory).forEach((entry) => {
-    const entryPath = path.join(directory, entry);
-    const stats = fs.statSync(entryPath);
-
-    if (stats.isDirectory()) {
-      fs.rmSync(entryPath, { recursive: true, force: true });
-    } else {
-      fs.unlinkSync(entryPath);
-    }
-  });
-}
-
-if (fs.existsSync(publicDownloadsDir)) {
-  fs.rmSync(publicDownloadsDir, { recursive: true, force: true });
-  console.log(`✓ Removed retired download directory: ${path.relative(frontendRoot, publicDownloadsDir)}`);
 }
 
 /**
@@ -70,6 +48,13 @@ function copyFile(sourcePath, targetPath) {
   return true;
 }
 
+// Refuse a stale bootstrap pin before writing any hosted asset.
+const runtimeHash = createHash('sha256').update(fs.readFileSync(path.join(rootDir, 'scripts', 'install-runtime.mjs'))).digest('hex');
+for (const [name, pattern] of [['install.sh', /RUNTIME_SHA256="([a-f0-9]{64})"/g], ['install.ps1', /\$RuntimeSha256 = "([a-f0-9]{64})"/g]]) {
+  const matches = [...fs.readFileSync(path.join(rootDir, 'scripts', name), 'utf8').matchAll(pattern)];
+  if (matches.length !== 1 || matches[0][1] !== runtimeHash) throw Error('Stale installer runtime pin; run the reviewed local pin generator first');
+}
+
 // Copy installer scripts to /cli/ directory
 console.log('\nCopying installer scripts...');
 const cliDir = path.join(frontendRoot, 'public', 'cli');
@@ -80,6 +65,7 @@ if (!fs.existsSync(cliDir)) {
 const installerScripts = [
   { source: path.join(rootDir, 'scripts', 'install.sh'), target: 'install.sh' },
   { source: path.join(rootDir, 'scripts', 'install.ps1'), target: 'install.ps1' },
+  { source: path.join(rootDir, 'scripts', 'install-runtime.mjs'), target: 'install-runtime.mjs' },
 ];
 
 installerScripts.forEach(({ source, target }) => {
@@ -94,14 +80,19 @@ const packageJson = JSON.parse(
 const version = packageJson.version;
 const summary = {
   version,
-  publishedAt: new Date().toISOString(),
   files: {
     installers: installerScripts.length,
   },
   distribution: {
     method: 'github-checkout',
     repository: 'https://github.com/EEQuality/ellygent-cli',
-    defaultRef: 'main',
+    defaultRef: RELEASE.commit,
+    releaseTag: `v${RELEASE.version}`,
+    sourceCommit: RELEASE.commit,
+    lockSha256: RELEASE.lockSha256,
+    signatureConfigured: false,
+    independentBootstrapVerificationRequired: true,
+    sha256: Object.fromEntries(installerScripts.map(({source,target}) => [target,createHash('sha256').update(fs.readFileSync(source)).digest('hex')])),
   },
 };
 

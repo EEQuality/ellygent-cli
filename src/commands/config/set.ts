@@ -1,4 +1,4 @@
-import { input } from "@inquirer/prompts";
+import input from "@inquirer/input";
 import type { Command } from "commander";
 import type { ConfigKey } from "../../types/config.js";
 import type { CommandContext } from "../shared.js";

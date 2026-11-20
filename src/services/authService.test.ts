@@ -8,15 +8,13 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("../api/contextApiClient.js", () => ({
-  ContextApiClient: vi.fn().mockImplementation(() => ({
-    listOrganizations: mocks.listOrganizations,
-  })),
+  ContextApiClient: vi.fn().mockImplementation(function () {
+    return { listOrganizations: mocks.listOrganizations };
+  }),
 }));
 
-vi.mock("@inquirer/prompts", () => ({
-  input: mocks.input,
-  password: mocks.password,
-}));
+vi.mock("@inquirer/input", () => ({ default: mocks.input }));
+vi.mock("@inquirer/password", () => ({ default: mocks.password }));
 
 function createConfigStore(initial: Record<string, unknown> = {}) {
   return {
