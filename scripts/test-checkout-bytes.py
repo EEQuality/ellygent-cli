@@ -25,7 +25,7 @@ console.log(JSON.stringify(rows));
 VERIFY = r'''
 import {readFileSync} from 'node:fs';
 import {RELEASE,verifySource,verifyCheckoutBytes} from RUNTIME_URI;
-try {verifySource(process.argv[1],RELEASE,process.argv[2]);verifyCheckoutBytes(process.argv[1],readFileSync(process.argv[3],'utf8'));console.log('VERIFIED');}
+try {verifySource(process.argv[1],{version:"0.1.2",commit:"51d818776b5aaac0d9beac23eb9d9946f8170b01",lockSha256:"6a74281752c87bc2bfbc30300b997e39e250ef5f3ba3f49fdb74200e4af5ebe4"},process.argv[2]);verifyCheckoutBytes(process.argv[1],readFileSync(process.argv[3],'utf8'));console.log('VERIFIED');}
 catch {console.log('REFUSED');process.exitCode=2;}
 '''.replace('RUNTIME_URI', json.dumps(RUNTIME))
 

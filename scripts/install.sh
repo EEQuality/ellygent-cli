@@ -1,9 +1,9 @@
 #!/bin/sh
 # Download/review this wrapper and compare its SHA256 with an independently trusted release record first.
-# Default: audited v0.1.2 source commit, verified lockfile, versioned managed install.
+# Default: audited v0.1.3 source commit, verified lockfile, versioned managed install.
 set -eu
 umask 077
-VERSION="${VERSION:-v0.1.2}"
+VERSION="${VERSION:-v0.1.3}"
 export VERSION
 RUNTIME_SHA256="2319a564302003fd3a4c01f021b37fdf3d6968d38d384ca3b820b33a212201be"
 RUNTIME_URL="https://ellygent.com/cli/install-runtime.mjs"

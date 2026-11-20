@@ -1,5 +1,5 @@
 # Verify this wrapper against an independently trusted release record before execution.
-param([string]$Version = "v0.1.2", [switch]$Rollback)
+param([string]$Version = "v0.1.3", [switch]$Rollback)
 $ErrorActionPreference = "Stop"
 if ($env:VERSION) { $Version = $env:VERSION }
 $env:VERSION = $Version

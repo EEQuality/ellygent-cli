@@ -9,8 +9,8 @@ import { RELEASE, install, rollback, selectRelease, verifySource } from './insta
 
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const root = fileURLToPath(new URL('..', import.meta.url));
-// Preserve historical trusted-release bytes independently of current dependencies.
-const releaseFixture = join(root, 'scripts', 'fixtures', 'v0.1.2');
+// Exercise the current immutable release package and lockfile. Historical checkout bytes have separate fixtures.
+const releaseFixture = root;
 const lock = readFileSync(join(releaseFixture, 'package-lock.json'));
 const metadata = readFileSync(join(releaseFixture, 'package.json'));
 function fixture(stage) { writeFileSync(join(stage,'package.json'),metadata); writeFileSync(join(stage,'package-lock.json'),lock); }
@@ -21,8 +21,8 @@ function runner({failBuild=false,wrongVersion=false,failCI=false,wrongCommit=fal
       return args.includes('rev-parse')?(wrongCommit?'a'.repeat(40):RELEASE.commit):'';
     }
     if(args.includes('ci')) { assert.ok(args.includes('--ignore-scripts')); assert.ok(!args.includes('install'));if(failCI)throw Error('synthetic dependency failure');return ''; }
-    if(args.includes('build')) { if(failBuild)throw Error('synthetic build failure');mkdirSync(join(cwd,'dist'),{recursive:true});writeFileSync(join(cwd,'dist/index.js'),'console.log("0.1.2");');return ''; }
-    if(args.includes('--version')) return wrongVersion?'0.0.0':'0.1.2';
+    if(args.includes('build')) { if(failBuild)throw Error('synthetic build failure');mkdirSync(join(cwd,'dist'),{recursive:true});writeFileSync(join(cwd,'dist/index.js'),`console.log(${JSON.stringify(RELEASE.version)});`);return ''; }
+    if(args.includes('--version')) return wrongVersion?'0.0.0':RELEASE.version;
     throw Error('Unexpected command fixture');
   };
 }
@@ -41,7 +41,7 @@ test('source identity, commit and lock mismatch refuse before npm',()=>isolated(
 }));
 test('clean managed install has exact receipt/version and no global uninstall; both aliases share it',()=>isolated(temp=>{
  const env={ELLYGENT_INSTALL_ROOT:join(temp,'install')};const result=install({env,populate:fixture,run:runner()});
- assert.equal(result.version,'0.1.2');assert.equal(JSON.parse(readFileSync(join(result.generation,'install-receipt.json'))).commit,RELEASE.commit);
+ assert.equal(result.version,RELEASE.version);assert.equal(JSON.parse(readFileSync(join(result.generation,'install-receipt.json'))).commit,RELEASE.commit);
  for(const name of ['ellygent','ellygent-cli','ellygent.cmd','ellygent-cli.cmd'])assert.ok(existsSync(join(result.bin,name)));
  assert.ok(readFileSync(join(result.bin,'ellygent-launcher.mjs'),'utf8').includes('current.json'));
 }));
@@ -67,7 +67,7 @@ test('promotion failure and deliberate rollback preserve/recover verified versio
 test('hosted wrapper verifies common runtime before execution on POSIX and Windows',()=>{
  const expected=hash(readFileSync(join(root,'scripts/install-runtime.mjs')));
  for(const name of ['install.sh','install.ps1']) {
-  const content=readFileSync(join(root,'scripts',name),'utf8');assert.ok(content.includes(expected));assert.ok(!content.includes('npm uninstall'));assert.ok(content.includes('v0.1.2'));
+  const content=readFileSync(join(root,'scripts',name),'utf8');assert.ok(content.includes(expected));assert.ok(!content.includes('npm uninstall'));assert.ok(content.includes('v'+RELEASE.version));
  }
  const shell=readFileSync(join(root,'scripts/install.sh'),'utf8');assert.ok(shell.includes('curl --disable'));assert.ok(!shell.includes('curl -k'));
  const powershell=readFileSync(join(root,'scripts/install.ps1'),'utf8');assert.ok(powershell.indexOf('Get-FileHash')<powershell.indexOf('& $Node $Runtime'));assert.ok(!powershell.includes('iex'));

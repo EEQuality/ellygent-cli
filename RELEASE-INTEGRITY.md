@@ -154,3 +154,14 @@ Python3 and existing local Git objects in disposable fixtures; it never fetches 
 It covers inherited autocrlf true/false, inert inherited transform/hook/template refusal,
 non-lock source transformation detection and stale-pin hosted-copy refusal. Native Windows
 execution remains a separate gate; the same byte policy is shared by both wrappers.
+
+
+## 2026-11-20 owner-authorized release exception
+
+The owner explicitly directed removal of the additional manual approval and special
+attested-builder/staging gates for this release. Publication uses the ordinary
+GitHub-hosted regression/build workflow, immutable source/lock pins and asset
+checksums. No independently attested builder or live QA pass is claimed. The
+fail-closed policy helper remains available for future separately authorized use.
+Existing parser, context-preservation, checkout-byte, safe-installer and native
+Windows regression checks remain blocking. Historical v0.1.2 is not retagged.
