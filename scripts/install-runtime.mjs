@@ -7,7 +7,7 @@ import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const RELEASE = Object.freeze({ version: '0.1.4', commit: 'd8160c864ffa02ef71658301c6fa9eb2bafbf213', lockSha256: 'ad5f04da0a90d53e61609a9ba60a9ea9727e93b348047581497ae7fcf09e6678' });
+export const RELEASE = Object.freeze({ version: '0.1.4', commit: '87f3a44c5b748514fb9305d4293a3a72cc1b8449', lockSha256: 'ad5f04da0a90d53e61609a9ba60a9ea9727e93b348047581497ae7fcf09e6678' });
 const REPOSITORY = 'https://github.com/EEQuality/ellygent-cli.git';
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const noOutput = ['ignore', 'pipe', 'pipe'];

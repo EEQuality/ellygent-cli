@@ -1,6 +1,6 @@
 # CLI 0.1.4 release identity
 
-Managed installers select source `d8160c864ffa02ef71658301c6fa9eb2bafbf213`,
+Managed installers select source `87f3a44c5b748514fb9305d4293a3a72cc1b8449`,
 package version 0.1.4 and lock SHA256 `ad5f04da0a90d53e61609a9ba60a9ea9727e93b348047581497ae7fcf09e6678`.
 The release commit adds installer pins/records; the workflow verifies application
 source and package/lock bytes equal the selected source before publication.
