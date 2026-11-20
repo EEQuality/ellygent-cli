@@ -1,9 +1,9 @@
 # Verify this wrapper against an independently trusted release record before execution.
-param([string]$Version = "v0.1.3", [switch]$Rollback)
+param([string]$Version = "v0.1.4", [switch]$Rollback)
 $ErrorActionPreference = "Stop"
 if ($env:VERSION) { $Version = $env:VERSION }
 $env:VERSION = $Version
-$RuntimeSha256 = "41eb02b0d58fb45ef9d140a92fd5f1cc3ded931944eba8bb827a0a77b77c8085"
+$RuntimeSha256 = "2ad5bb56c78f615a0db76f0f40090fd17b3ad465282c03323cfe08667bbc1bff"
 $RuntimeUrl = "https://ellygent.com/cli/install-runtime.mjs"
 $Node = (Get-Command node -ErrorAction Stop).Source
 $null = Get-Command git -ErrorAction Stop
