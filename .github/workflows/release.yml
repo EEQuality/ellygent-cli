@@ -36,11 +36,13 @@ jobs:
           REQUIRE_CROSS_FS: '1'
   package-and-publish:
     needs: [verify, windows]
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.ref_protected
     environment: cli-release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
+      actions: read
+      attestations: read
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -49,17 +51,14 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: '20'
+          node-version: '20.20.2'
           cache: npm
-      - run: npm ci --ignore-scripts
-      - run: npm run build
       - name: Check immutable release identity
         run: |
           set -Eeuo pipefail
           version=$(node -p 'JSON.parse(require("fs").readFileSync("package.json")).version')
           test "$GITHUB_REF" = "refs/tags/v$version"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(node dist/index.js --version)" = "$version"
           node --input-type=module -e 'import {RELEASE} from "./scripts/install-runtime.mjs"; import fs from "node:fs"; if(RELEASE.version!==JSON.parse(fs.readFileSync("package.json")).version)process.exit(2);'
       - name: Verify pinned application equals the release application
         run: |
@@ -67,30 +66,51 @@ jobs:
           import fs from 'node:fs'; import {execFileSync} from 'node:child_process'; import {createHash} from 'node:crypto';
           import {RELEASE} from './scripts/install-runtime.mjs';
           if(RELEASE.lockSha256!==createHash('sha256').update(fs.readFileSync('package-lock.json')).digest('hex')) throw Error('Lock pin mismatch');
-          if(execFileSync('git',['diff','--name-only',RELEASE.commit,'HEAD','--','src','package.json','package-lock.json'],{encoding:'utf8'}).trim()) throw Error('Pinned application differs from release');
+          if(execFileSync('git',['diff','--name-only',RELEASE.commit,'HEAD','--','src','package.json','package-lock.json','tsconfig.json'],{encoding:'utf8'}).trim()) throw Error('Pinned application differs from release');
           NODE
-      - name: Prepare local installer bundle
-        env:
-          FRONTEND_ROOT: ${{ runner.temp }}/ellygent-installer-bundle
-        run: |
-          mkdir -p "$FRONTEND_ROOT"
-          npm run publish:frontend
-      - name: Record release checksums and package
-        run: |
-          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP"
-          cd "$RUNNER_TEMP/ellygent-installer-bundle/public/cli"
-          sha256sum install.sh install.ps1 install-runtime.mjs distribution-summary.json > SHA256SUMS
       - name: Prepare reviewed release notes
         run: |
-          awk '/^## 0\.1\.4$/{p=1;next} /^## /{if(p) exit} p' CHANGELOG.md > "$RUNNER_TEMP/release-notes.md"
+          version=$(node -p 'require("./package.json").version')
+          awk -v heading="## $version" '$0==heading {p=1;next} /^## /{if(p) exit} p' CHANGELOG.md > "$RUNNER_TEMP/release-notes.md"
           test -s "$RUNNER_TEMP/release-notes.md"
+      - name: Download exact trusted builder evidence and gate publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TRUSTED_GH_SHA256: ${{ vars.TRUSTED_GH_SHA256 }}
+          TRUSTED_RELEASE_SIGNER_SHA: ${{ vars.TRUSTED_RELEASE_SIGNER_SHA }}
+          RELEASE_SECURITY_GATES_CONFIGURED: ${{ vars.RELEASE_SECURITY_GATES_CONFIGURED }}
+          RELEASE_BUILDER_RUN_ID: ${{ vars.RELEASE_BUILDER_RUN_ID }}
+          RELEASE_EVIDENCE_DIRECTORY: ${{ runner.temp }}/ellygent-release-evidence
+          RELEASE_PUBLISH_DIRECTORY: ${{ runner.temp }}/ellygent-release-upload
+        run: |
+          set -Eeuo pipefail
+          test "$RELEASE_SECURITY_GATES_CONFIGURED" = true
+          [[ "$RELEASE_BUILDER_RUN_ID" =~ ^[0-9]+$ ]]
+          [[ "$TRUSTED_GH_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          export TRUSTED_GH_BINARY="$(command -v gh)"
+          printf '%s  %s\n' "$TRUSTED_GH_SHA256" "$TRUSTED_GH_BINARY" | sha256sum -c -
+          run="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RELEASE_BUILDER_RUN_ID")"
+          jq -e --arg sha "$GITHUB_SHA" '.path==".github/workflows/trusted-release-builder.yml" and .head_sha==$sha and .conclusion=="success"' <<< "$run"
+          gh run download "$RELEASE_BUILDER_RUN_ID" --repo "$GITHUB_REPOSITORY" --name cli-release-evidence --dir "$RELEASE_EVIDENCE_DIRECTORY"
+          mkdir "$RELEASE_PUBLISH_DIRECTORY"
+          version=$(node -p 'require("./package.json").version')
+          for asset in install.sh install.ps1 install-runtime.mjs distribution-summary.json SHA256SUMS "ellygent-cli-${version}.tgz"; do
+            cp -- "$RELEASE_EVIDENCE_DIRECTORY/$asset" "$RELEASE_PUBLISH_DIRECTORY/$asset"
+          done
+          node scripts/release-security-gate.mjs
       - name: Publish only after all configured gates and environment review
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
           version=$(node -p 'require("./package.json").version')
-          gh release create "$GITHUB_REF_NAME" --verify-tag --target "$GITHUB_SHA" --notes-file "$RUNNER_TEMP/release-notes.md" "$RUNNER_TEMP/ellygent-installer-bundle/public/cli/install.sh" "$RUNNER_TEMP/ellygent-installer-bundle/public/cli/install.ps1" "$RUNNER_TEMP/ellygent-installer-bundle/public/cli/install-runtime.mjs" "$RUNNER_TEMP/ellygent-installer-bundle/public/cli/distribution-summary.json" "$RUNNER_TEMP/ellygent-installer-bundle/public/cli/SHA256SUMS" "$RUNNER_TEMP/ellygent-cli-${version}.tgz"
+          remote="$(git ls-remote --exit-code origin "$GITHUB_REF" "$GITHUB_REF^{}")"
+          target="$(awk -v ref="$GITHUB_REF^{}" '$2==ref {print $1}' <<< "$remote")"
+          if [[ -z "$target" ]]; then
+            target="$(awk -v ref="$GITHUB_REF" '$2==ref {print $1}' <<< "$remote")"
+          fi
+          test "$target" = "$GITHUB_SHA"
+          gh release create "$GITHUB_REF_NAME" --verify-tag --target "$GITHUB_SHA" --notes-file "$RUNNER_TEMP/release-notes.md" "$RUNNER_TEMP/ellygent-release-upload/install.sh" "$RUNNER_TEMP/ellygent-release-upload/install.ps1" "$RUNNER_TEMP/ellygent-release-upload/install-runtime.mjs" "$RUNNER_TEMP/ellygent-release-upload/distribution-summary.json" "$RUNNER_TEMP/ellygent-release-upload/SHA256SUMS" "$RUNNER_TEMP/ellygent-release-upload/ellygent-cli-${version}.tgz"
 
   windows:
     runs-on: windows-2022
