@@ -1,3 +1,14 @@
+# CLI 0.1.3 release identity
+
+Managed installers select source `942ccd6fa5bc01409b51467f4f82a33fb1887aa5`,
+package version0.1.3 and lock SHA256 `a15cb7624adeb30b96a383a6bb4c0f5dcb64c00313f531708f097ee000d984d2`.
+The release commit adds installer pins/records; the workflow verifies application
+source and package/lock bytes equal the selected source before publication.
+
+The following sections retain the historical security-review baseline and its
+bootstrap/operational limitations. The owner-authorized2026-11-20 exception below
+supersedes the proposed mandatory independent-builder/manual approval gate.
+
 # CLI release integrity and operator transition
 
 This patch is local source, not a published release or configured signing system.
