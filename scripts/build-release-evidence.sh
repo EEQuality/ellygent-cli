@@ -3,14 +3,18 @@
 set -euo pipefail
 : "${RUNNER_TEMP:?}" "${RELEASE_EVIDENCE_DIRECTORY:?}"
 [[ "${GITHUB_SHA:-}" =~ ^[0-9a-f]{40}$ ]]
-[[ "${GITHUB_REF_PROTECTED:-}" = true ]]
+if [[ "${CLI_RELEASE_DRY_RUN:-}" = true ]]; then
+  [[ "${GITHUB_EVENT_NAME:-}" = pull_request && "${GITHUB_REF:-}" =~ ^refs/pull/[1-9][0-9]*/merge$ ]]
+else
+  [[ "${GITHUB_REF_PROTECTED:-}" = true ]]
+fi
 [[ "${TRIVY_VERSION:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
 [[ "${TRIVY_ARCHIVE_SHA256:-}" =~ ^[0-9a-f]{64}$ ]]
 scratch=$(mktemp -d "$RUNNER_TEMP/cli-builder.XXXXXX")
 out="$RELEASE_EVIDENCE_DIRECTORY"
 mkdir "$out" "$scratch/bundle"
 version=$(node -p 'require("./package.json").version')
-test "$GITHUB_REF" = "refs/tags/v$version"
+if [[ "${CLI_RELEASE_DRY_RUN:-}" != true ]]; then test "$GITHUB_REF" = "refs/tags/v$version"; fi
 test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
 npm ci --ignore-scripts
 npm run build

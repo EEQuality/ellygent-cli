@@ -40,3 +40,9 @@ test('application containers require complete scans of exact immutable release i
  evidence.scans.container={...evidence.scans.dependency,reportFile:'container-report.json',scannedImages:[...evidence.containerImages]};assert.equal(validateEvidence(evidence,options),true);
  evidence.scans.container.scannedImages=['registry.invalid/other@sha256:'+'e'.repeat(64)];assert.throws(()=>validateEvidence(evidence,options));
 });
+
+test('production verifier rejects an explicitly marked dry run, wrong signer, or PR ref',()=>{
+ for(const variant of [{dryRun:true},{builderWorkflow:'EEQuality/ellygent-cli/.github/workflows/trusted-release-builder-dry-run.yml'},{releaseRef:'refs/pull/5/merge'}]){
+   const {evidence,options}=fixture();Object.assign(evidence,variant);assert.throws(()=>validateEvidence(evidence,options));
+ }
+});

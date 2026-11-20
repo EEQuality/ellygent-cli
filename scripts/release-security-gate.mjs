@@ -11,7 +11,7 @@ const basename = name => typeof name === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9._-]
 
 export function validateEvidence(evidence, { source, version, appCommit, lockSha256, files, today = new Date().toISOString().slice(0,10) }) {
   if(!/^[a-f0-9]{64}$/.test(lockSha256||'')||evidence.lockSha256!==lockSha256||evidence.scans?.dependency?.lockSha256!==lockSha256)throw Error('Dependency report is not bound to the release lockfile');
-  if(evidence.schema!==1||evidence.sourceCommit!==source||evidence.packageVersion!==version||evidence.builderWorkflow!=='EEQuality/ellygent-cli/.github/workflows/trusted-release-builder.yml')throw Error('Release identity/provenance evidence missing');
+  if(evidence.dryRun!==undefined||evidence.schema!==1||evidence.sourceCommit!==source||evidence.packageVersion!==version||evidence.builderWorkflow!=='EEQuality/ellygent-cli/.github/workflows/trusted-release-builder.yml')throw Error('Release identity/provenance evidence missing');
   if(evidence.kind==='cli'&&(!/^[a-f0-9]{40}$/.test(appCommit||'')||evidence.appCommit!==appCommit||evidence.releaseRef!==`refs/tags/v${version}`))throw Error('Pinned application and distribution identities must both be attested');
   if(!['cli','application'].includes(evidence.kind)||!Array.isArray(evidence.containerImages)||evidence.containerImages.some(image=>typeof image!=='string'||!/^[-a-zA-Z0-9./:]+@sha256:[a-f0-9]{64}$/.test(image))||(evidence.kind==='application'&&evidence.containerImages.length===0))throw Error('Immutable container artifact inventory required');
   for(const kind of ['dependency','container']) {
