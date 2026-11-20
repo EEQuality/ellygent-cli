@@ -1,16 +1,18 @@
 #!/usr/bin/env node
-/** Disabled-by-default publication gate. Reports must come from an independently trusted attested builder. */
+/** Publication gate. Evidence must come from the independently trusted attested builder. */
 import { readFileSync, appendFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+export const cliPublishedFiles = version => ['install.sh','install.ps1','install-runtime.mjs','distribution-summary.json','SHA256SUMS',`ellygent-cli-${version}.tgz`];
 const basename = name => typeof name === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,99}$/.test(name);
 
-export function validateEvidence(evidence, { source, version, lockSha256, files, today = new Date().toISOString().slice(0,10) }) {
+export function validateEvidence(evidence, { source, version, appCommit, lockSha256, files, today = new Date().toISOString().slice(0,10) }) {
   if(!/^[a-f0-9]{64}$/.test(lockSha256||'')||evidence.lockSha256!==lockSha256||evidence.scans?.dependency?.lockSha256!==lockSha256)throw Error('Dependency report is not bound to the release lockfile');
   if(evidence.schema!==1||evidence.sourceCommit!==source||evidence.packageVersion!==version||evidence.builderWorkflow!=='EEQuality/ellygent-cli/.github/workflows/trusted-release-builder.yml')throw Error('Release identity/provenance evidence missing');
+  if(evidence.kind==='cli'&&(!/^[a-f0-9]{40}$/.test(appCommit||'')||evidence.appCommit!==appCommit||evidence.releaseRef!==`refs/tags/v${version}`))throw Error('Pinned application and distribution identities must both be attested');
   if(!['cli','application'].includes(evidence.kind)||!Array.isArray(evidence.containerImages)||evidence.containerImages.some(image=>typeof image!=='string'||!/^[-a-zA-Z0-9./:]+@sha256:[a-f0-9]{64}$/.test(image))||(evidence.kind==='application'&&evidence.containerImages.length===0))throw Error('Immutable container artifact inventory required');
   for(const kind of ['dependency','container']) {
     const scan=evidence.scans?.[kind];
@@ -31,24 +33,38 @@ export function validateEvidence(evidence, { source, version, lockSha256, files,
     if(hash(files(artifact.name))!==artifact.sha256)throw Error('Artifact/report checksum mismatch');
   }
   for(const kind of ['dependency','container'])if(evidence.scans[kind].status==='complete'&&!seen.has(evidence.scans[kind].reportFile))throw Error('Scanner report missing from attested checksum manifest');
-  for(const name of evidence.kind==='cli'?['install.sh','install.ps1','install-runtime.mjs','distribution-summary.json']:[])if(!seen.has(name))throw Error('Published artifact is missing from attested checksum manifest');
+  for(const name of evidence.kind==='cli'?cliPublishedFiles(version):[])if(!seen.has(name))throw Error('Published artifact is missing from attested checksum manifest');
   if(!seen.has(evidence.sbom.file))throw Error('SBOM not integrity-bound to attested evidence');
   const sbom=JSON.parse(files(evidence.sbom.file));if(sbom.bomFormat!=='CycloneDX'||(!Array.isArray(sbom.components)||sbom.components.length===0))throw Error('Invalid SBOM');
   return true;
+}
+export function comparePublisherBytes(evidence, version, files) {
+  for(const name of cliPublishedFiles(version)) {
+    const entry=evidence.files.find(file=>file.name===name);
+    if(!entry||hash(files(name))!==entry.sha256)throw Error('Publisher bytes differ from verified builder evidence');
+  }
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
  try {
   if(process.env.RELEASE_SECURITY_GATES_CONFIGURED!=='true')throw Error('Security builder/attestation not configured');
   const directory=process.env.RELEASE_EVIDENCE_DIRECTORY, gh=process.env.TRUSTED_GH_BINARY;
+  const signerSha=process.env.TRUSTED_RELEASE_SIGNER_SHA;
+  if(!/^[a-f0-9]{40}$/.test(signerSha||''))throw Error('Exact reviewed builder workflow commit required');
   if(!directory||!isAbsolute(directory)||!gh||!isAbsolute(gh)||!/^[a-f0-9]{64}$/.test(process.env.TRUSTED_GH_SHA256||''))throw Error('Trusted verifier/evidence prerequisite missing');
   if(hash(readFileSync(gh))!==process.env.TRUSTED_GH_SHA256)throw Error('Verifier binary pin mismatch');
-  const file=join(directory,'release-evidence.json'), evidence=JSON.parse(readFileSync(file));
+  const file=join(directory,'release-evidence.json');
   const source=process.env.GITHUB_SHA;if(!/^[a-f0-9]{40}$/.test(source||''))throw Error('Exact source commit required');
   // Operator must provision this separate reviewed trusted-builder workflow and GitHub attestations.
-  execFileSync(gh,['attestation','verify',file,'--repo','EEQuality/ellygent-cli','--signer-workflow','EEQuality/ellygent-cli/.github/workflows/trusted-release-builder.yml','--source-digest',source],{stdio:['ignore','ignore','ignore']});
+  execFileSync(gh,['attestation','verify',file,'--repo','EEQuality/ellygent-cli','--signer-workflow','EEQuality/ellygent-cli/.github/workflows/trusted-release-builder.yml','--signer-digest',signerSha,'--source-digest',source,'--source-ref',`refs/tags/v${JSON.parse(readFileSync('package.json')).version}`,'--deny-self-hosted-runners'],{stdio:['ignore','ignore','ignore']});
   const version=JSON.parse(readFileSync('package.json')).version;
-  validateEvidence(evidence,{source,version,lockSha256:hash(readFileSync('package-lock.json')),files:name=>readFileSync(join(directory,name))});
+  const evidence=JSON.parse(readFileSync(file));
+  const {RELEASE}=await import('./install-runtime.mjs');
+  if(RELEASE.version!==version||RELEASE.lockSha256!==hash(readFileSync('package-lock.json')))throw Error('Release pin mismatch');
+  validateEvidence(evidence,{source,version,appCommit:RELEASE.commit,lockSha256:hash(readFileSync('package-lock.json')),files:name=>readFileSync(join(directory,name))});
   if(evidence.kind!=='cli')throw Error('CLI publication requires CLI-specific evidence');
+  const publishDirectory=process.env.RELEASE_PUBLISH_DIRECTORY;
+  if(!publishDirectory||!isAbsolute(publishDirectory))throw Error('Exact upload directory required');
+  comparePublisherBytes(evidence,version,name=>readFileSync(join(publishDirectory,name)));
   if(process.env.GITHUB_OUTPUT)for(const [name,key] of [['install.sh','install_sh_sha'],['install.ps1','install_ps1_sha'],['install-runtime.mjs','install_runtime_sha'],['distribution-summary.json','distribution_summary_sha']])appendFileSync(process.env.GITHUB_OUTPUT,`${key}=${evidence.files.find(f=>f.name===name).sha256}\n`);
   console.log('Pinned scanner/SBOM/attested artifact release gate passed');
  } catch {console.error('Release security gate refused: trusted scan/SBOM/provenance prerequisites or policy failed');process.exitCode=1;}
