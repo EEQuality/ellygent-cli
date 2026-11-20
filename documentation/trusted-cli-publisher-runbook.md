@@ -78,3 +78,26 @@ it reported CLI 0.1.4 and the intended app commit, and `ellygent public list
 --json` returned the public AuRoVac example without credentials. No installed
 default or publisher setting was changed during the audit. No v0.1.4 assets or
 tag were replaced or re-signed.
+
+## Hosted no-publish rehearsal
+
+[Run 44812099844](https://github.com/EEQuality/ellygent-cli/actions/runs/44812099844)
+independently rebuilt, scanned, and attested a **rehearsal** manifest on a GitHub
+hosted runner. The temporary rehearsal accepted only the same-repository PR
+branch and had no release or deployment rights. Its signer was
+`EEQuality/ellygent-cli/.github/workflows/trusted-release-builder-dry-run.yml`,
+source and signer digest `175bef7186c284f75ea824f35db9fe08852dbae8`, and
+source ref `refs/pull/5/merge`. The signed subject `release-evidence.json`
+had SHA256 `c68cbbaa879a80dc644e9b963009e37af00069eb79e942ad5ee8a9885cb7c5a6`.
+Independent verification enforced that signer, digest, ref, and hosted
+runner. Every one of the six independently rebuilt assets matched the
+signed manifest and also matched the published 0.1.4 asset byte for byte.
+The evidence bound the same app commit and npm lock as the 0.1.4 audit above.
+
+Verification with the production workflow signer or a release-tag source
+ref was deliberately attempted and **rejected**; tests also reject the
+explicit rehearsal marker. The rehearsal files and shared-code paths were
+removed before merge. This is successful hosted attestation mechanics and
+independent artifact reproduction, **not** original 0.1.4 production-tag
+provenance or a successful protected publish. No tag, variable, release
+asset, or deployment was created or changed by the rehearsal.

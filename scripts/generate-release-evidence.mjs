@@ -22,14 +22,10 @@ const scannerVersion = execFileSync(scanner,['--version'],{encoding:'utf8'}).mat
 if (!scannerVersion || scannerVersion !== process.env.TRIVY_VERSION) throw Error('Scanner executable version mismatch');
 const updated = JSON.parse(readFileSync(database)).UpdatedAt;
 if (typeof updated !== 'string' || !Number.isFinite(Date.parse(updated)) || Date.parse(updated) > Date.now()) throw Error('Genuine scanner database timestamp required');
-const dryRun = process.env.CLI_RELEASE_DRY_RUN === 'true';
 const evidence = {
   schema: 1, kind: 'cli', appCommit: RELEASE.commit, releaseRef: process.env.GITHUB_REF,
   sourceCommit, packageVersion, lockSha256,
-  builderWorkflow: dryRun
-    ? 'EEQuality/ellygent-cli/.github/workflows/trusted-release-builder-dry-run.yml'
-    : 'EEQuality/ellygent-cli/.github/workflows/trusted-release-builder.yml',
-  ...(dryRun ? { dryRun: true } : {}),
+  builderWorkflow: 'EEQuality/ellygent-cli/.github/workflows/trusted-release-builder.yml',
   containerImages: [],
   scans: {
     dependency: {
@@ -44,9 +40,5 @@ const evidence = {
   sbom: { format: 'CycloneDX', file: 'sbom.json' },
   files: [...cliPublishedFiles(packageVersion), reportFile, 'sbom.json'].map(name => ({name,sha256:hash(files(name))})),
 };
-// Check the same file/scan policy locally for a rehearsal, without ever writing
-// production-shaped evidence or weakening the production verifier.
-if (dryRun && (process.env.GITHUB_EVENT_NAME !== 'pull_request' || !/^refs\/pull\/[1-9][0-9]*\/merge$/.test(evidence.releaseRef))) throw Error('Expected an isolated pull request rehearsal');
-const checked = dryRun ? {...evidence,dryRun:undefined,releaseRef:`refs/tags/v${packageVersion}`,builderWorkflow:'EEQuality/ellygent-cli/.github/workflows/trusted-release-builder.yml'} : evidence;
-validateEvidence(checked, {source:sourceCommit,version:packageVersion,appCommit:RELEASE.commit,lockSha256,files});
+validateEvidence(evidence, {source:sourceCommit,version:packageVersion,appCommit:RELEASE.commit,lockSha256,files});
 writeFileSync(join(directory,'release-evidence.json'),JSON.stringify(evidence,null,2)+'\n',{flag:'wx'});
