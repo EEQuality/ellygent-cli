@@ -627,3 +627,13 @@ single JSON stdout and refresh failure preservation. `--version` alone cannot
 identify a build: both historical benchmark/tag builds reported `0.1.1`.
 Publication requires all verification and the separately configured trusted security
 builder/attestation gate. It is disabled by default; manual dispatch is verify-only.
+
+### Browse approved public projects without a token
+
+`ellygent public list` lists the available public gallery. Use
+`ellygent public inspect <slug-or-public-url>` for the published outline,
+`ellygent public search <project> "<query>"` to find an item, and
+`ellygent public item <project> <id>` to read its approved fields and links.
+`ellygent public document <project> <id> --offset <n>` pages through a published document.
+These commands produce JSON, never send a PAT, and do not fall back to private data.
+There is no public download/export command. The gallery must be enabled by the service.

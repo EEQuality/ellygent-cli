@@ -5,6 +5,7 @@ import chalk from "chalk";
 import { createCommandContext, getEffectiveOptions } from "./commands/shared.js";
 import { registerSandboxCommands } from "./commands/sandbox.js";
 import { registerAuthCommands } from "./commands/auth/index.js";
+import { registerPublicCommands } from "./commands/public.js";
 import { registerContextCommands } from "./commands/context/index.js";
 import { registerConfigCommands } from "./commands/config/index.js";
 import { registerCompletionCommands } from "./commands/completion.js";
@@ -99,6 +100,7 @@ registerSandboxCommands(program, context);
 registerAuthCommands(program, context);
 registerWhoAmICommand(program, context);
 registerContextCommands(program, context);
+registerPublicCommands(program);
 registerConfigCommands(program, context);
 registerCompletionCommands(program);
 
