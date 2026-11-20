@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4
+
+- Browse published Ellygent projects and specifications from the terminal without a PAT.
+- List and search public snapshots, then inspect their published documents and items.
+- Private project commands still require authentication; public commands do not export bundles.
+
 ## 0.1.2 — 2026-11-16
 
 - Fix spaced named-baseline options being consumed as the CLI version action;
